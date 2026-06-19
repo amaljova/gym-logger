@@ -3,10 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Workout, type WorkoutSet, type Exercise, type Routine, type SetType } from '../db/db';
 import {
   Plus, Minus, Check, ChevronDown, ChevronUp, Trash2,
-  Dumbbell, Play, PlusCircle, Save, X, Search, MessageSquare
+  Dumbbell, Play, PlusCircle, Save, X, Search, MessageSquare, GripVertical
 } from 'lucide-react';
 import { uuid } from '../utils/uuid';
 import { getMuscleGroups } from '../utils/muscleGroups';
+import { sortRoutines, isShownOnTrain, mergeVisibleOrder, persistRoutineOrder } from '../utils/routineOrder';
+import SortableList from '../components/SortableList';
 
 // Visual styling per set type. `normal` shows the plain set number.
 const SET_TYPE_META: Record<Exclude<SetType, 'normal'>, { label: string; color: string; bg: string }> = {
@@ -48,6 +50,29 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
 
   const exercises = useLiveQuery(() => db.exercises.toArray()) || [];
   const routines = useLiveQuery(() => db.routines.toArray()) || [];
+  // Most recent completed sessions — used to highlight the next routine due.
+  const recentCompleted = useLiveQuery(
+    () => db.workouts.where('status').equals('completed').reverse().sortBy('date')
+  ) || [];
+
+  // Routines shown on the Train page, in manual order.
+  const trainRoutines = sortRoutines(routines.filter(isShownOnTrain));
+
+  // "Workout of the day" = the routine after the last completed routine session.
+  let todaysRoutineId: string | undefined;
+  if (trainRoutines.length > 0) {
+    const lastRoutineId = recentCompleted.find(w => w.routineId)?.routineId;
+    if (lastRoutineId) {
+      const idx = trainRoutines.findIndex(r => r.id === lastRoutineId);
+      todaysRoutineId = idx === -1 ? trainRoutines[0].id : trainRoutines[(idx + 1) % trainRoutines.length].id;
+    } else {
+      todaysRoutineId = trainRoutines[0].id;
+    }
+  }
+
+  const handleTrainReorder = (visibleIds: string[]) => {
+    persistRoutineOrder(mergeVisibleOrder(sortRoutines(routines), visibleIds));
+  };
 
   const liveWorkoutId = liveActiveWorkout?.id;
   const activeSets = useLiveQuery(
@@ -163,13 +188,11 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
     const newWorkout: Workout = { id: workoutId, date: now, routineId: routine.id, status: 'active', updatedAt: now };
     await db.workouts.add(newWorkout);
 
+    const completedWorkouts = await db.workouts
+      .where('status').equals('completed').reverse().sortBy('date');
+
     for (const re of routine.exercises) {
-      let baseWeight = re.targetWeight;
-      let baseReps = re.targetReps;
-
-      const completedWorkouts = await db.workouts
-        .where('status').equals('completed').reverse().sortBy('date');
-
+      // Find the most recent completed session that included this exercise.
       let foundSets: WorkoutSet[] = [];
       for (const w of completedWorkouts) {
         const sets = await db.sets
@@ -182,9 +205,12 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
         }
       }
 
-      for (let i = 1; i <= re.targetSets; i++) {
-        let weight = baseWeight;
-        let reps = baseReps;
+      // Prefill from last time: set COUNT, weight, and reps. Fall back to the
+      // routine's targets only when this exercise has never been logged.
+      const setCount = foundSets.length > 0 ? foundSets.length : re.targetSets;
+      for (let i = 1; i <= setCount; i++) {
+        let weight = re.targetWeight;
+        let reps = re.targetReps;
         if (foundSets.length > 0) {
           const match = foundSets[i - 1] || foundSets[foundSets.length - 1];
           weight = match.weight;
@@ -394,17 +420,7 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
               <p style={styles.greetSub}>Pick a routine or start freestyle.</p>
             </div>
 
-            {/* Quick stat tiles */}
-            <div className="bento-tile" style={{ ...styles.statTile, background: 'var(--accent-bg)', borderColor: 'var(--accent-border)' }}>
-              <span style={{ ...styles.statTileVal, color: 'var(--accent)' }}>{routines.length}</span>
-              <span style={styles.statTileLbl}>Routines</span>
-            </div>
-            <div className="bento-tile" style={{ ...styles.statTile, background: 'var(--type-warmup-bg)', borderColor: 'var(--amber)' }}>
-              <span style={{ ...styles.statTileVal, color: 'var(--amber)' }}>{exercises.length}</span>
-              <span style={styles.statTileLbl}>Exercises</span>
-            </div>
-
-            {/* Freestyle CTA — solid coral */}
+            {/* Freestyle CTA */}
             <button className="btn btn-primary col-span-2" onClick={handleStartFreestyle} style={{ height: '56px', fontSize: '16px', borderRadius: '16px' }}>
               <Play size={20} />
               Start freestyle session
@@ -421,27 +437,53 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
                 </button>
               )}
             </div>
-            {routines.length === 0 ? (
+            {trainRoutines.length === 0 ? (
               <div className="bento-tile text-center" style={{ padding: '24px' }}>
-                <p className="text-secondary">No routines set up yet.</p>
+                <p className="text-secondary">
+                  {routines.length === 0 ? 'No routines set up yet.' : 'No routines pinned to Train. Enable some in Routines.'}
+                </p>
               </div>
             ) : (
-              <div className="bento-grid">
-                {routines.map((routine, i) => {
-                  const accentVar = i % 3 === 0 ? 'var(--accent)' : i % 3 === 1 ? 'var(--amber)' : 'var(--green)';
+              <SortableList
+                items={trainRoutines}
+                onReorder={handleTrainReorder}
+                renderItem={(routine, { dragging, handleProps }) => {
+                  const isToday = routine.id === todaysRoutineId;
                   return (
-                    <div key={routine.id} className="bento-tile col-span-2" style={{ ...styles.routineTile, borderColor: accentVar }}>
-                      <div style={{ minWidth: 0 }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: '600' }}>{routine.name}</h3>
-                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{routine.dayLabel}</p>
+                    <div
+                      key={routine.id}
+                      className="bento-tile"
+                      style={{
+                        ...styles.routineTile,
+                        borderColor: isToday ? 'var(--accent)' : 'var(--border-color)',
+                        boxShadow: dragging ? 'var(--shadow-lg)' : isToday ? '0 0 0 1px var(--accent-border)' : 'none',
+                        transform: dragging ? 'scale(1.02)' : 'none',
+                        opacity: dragging ? 0.95 : 1,
+                      }}
+                    >
+                      <button {...handleProps} className="drag-handle" aria-label="Drag to reorder">
+                        <GripVertical size={18} />
+                      </button>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ fontSize: '15px', fontWeight: '600' }}>{routine.name}</h3>
+                          {isToday && <span className="today-badge">Today</span>}
+                        </div>
+                        {routine.dayLabel && (
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{routine.dayLabel}</p>
+                        )}
                       </div>
-                      <button className="btn btn-secondary" onClick={() => handleStartRoutine(routine)} style={{ minHeight: '40px', padding: '0 16px', fontSize: '14px', flexShrink: 0 }}>
+                      <button
+                        className={isToday ? 'btn btn-primary' : 'btn btn-secondary'}
+                        onClick={() => handleStartRoutine(routine)}
+                        style={{ minHeight: '40px', padding: '0 16px', fontSize: '14px', flexShrink: 0 }}
+                      >
                         <Play size={15} /> Start
                       </button>
                     </div>
                   );
-                })}
-              </div>
+                }}
+              />
             )}
           </div>
         </div>

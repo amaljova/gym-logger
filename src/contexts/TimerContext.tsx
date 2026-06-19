@@ -49,144 +49,191 @@ function finishFeedback() {
 
 export const PRESETS = [30, 60, 90, 120, 180]; // seconds
 
+export type OverlayTarget = 'stopwatch' | 'timer' | null;
+
 interface TimerContextValue {
-  mode: TimerMode;
-  running: boolean;
+  mode: TimerMode;            // which view is selected on the Timer screen
+  switchMode: (m: TimerMode) => void;
+
+  // Stopwatch (independent)
+  swRunning: boolean;
   elapsed: number;
   laps: number[];
-  duration: number;
-  remaining: number;
-  isTimerDone: boolean;
-  /** running, or a finished rest-timer awaiting acknowledgement */
-  isActive: boolean;
-  progress: number; // 0..1 for the ring
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
+  swProgress: number;
+  startSw: () => void;
+  pauseSw: () => void;
+  resetSw: () => void;
+  closeSw: () => void;
   addLap: () => void;
+
+  // Rest timer (independent)
+  restRunning: boolean;
+  remaining: number;
+  duration: number;
+  restFinished: boolean;
+  restProgress: number;
+  startRest: () => void;
+  pauseRest: () => void;
+  resetRest: () => void;
+  closeRest: () => void;
   adjustDuration: (deltaSec: number) => void;
   setPreset: (sec: number) => void;
-  switchMode: (m: TimerMode) => void;
-  acknowledge: () => void; // dismiss the "done" state
+
+  /** Which timer the floating overlay should show (rest takes priority). */
+  overlayTarget: OverlayTarget;
 }
 
 const TimerContext = createContext<TimerContextValue | null>(null);
 
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<TimerMode>('stopwatch');
-  const [running, setRunning] = useState(false);
 
+  // ---- Stopwatch state ----
+  const [swRunning, setSwRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [laps, setLaps] = useState<number[]>([]);
-  const swAnchor = useRef(0);
+  const swAnchor = useRef(0);          // performance.now() - elapsed
+  const elapsedRef = useRef(0);
+  const swRaf = useRef<number | null>(null);
 
+  // ---- Rest timer state ----
+  const [restRunning, setRestRunning] = useState(false);
   const [duration, setDuration] = useState(60_000);
   const [remaining, setRemaining] = useState(60_000);
-  const timerEnd = useRef(0);
+  const [restFinished, setRestFinished] = useState(false);
+  const durationRef = useRef(60_000);
+  const remainingRef = useRef(60_000);
+  const restEnd = useRef(0);           // absolute performance.now() target
+  const restRaf = useRef<number | null>(null);
 
-  const [finished, setFinished] = useState(false);
-  const rafRef = useRef<number | null>(null);
-
-  const tick = useCallback(() => {
-    const now = performance.now();
-    if (mode === 'stopwatch') {
-      setElapsed(now - swAnchor.current);
-    } else {
-      const rem = timerEnd.current - now;
-      if (rem <= 0) {
-        setRemaining(0);
-        setRunning(false);
-        setFinished(true);
-        finishFeedback();
-        return;
-      }
-      setRemaining(rem);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [mode]);
-
+  // ---- Stopwatch loop (runs only while the stopwatch is running) ----
+  const swTick = useCallback(() => {
+    const v = performance.now() - swAnchor.current;
+    elapsedRef.current = v;
+    setElapsed(v);
+    swRaf.current = requestAnimationFrame(swTick);
+  }, []);
   useEffect(() => {
-    if (running) rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [running, tick]);
+    if (swRunning) swRaf.current = requestAnimationFrame(swTick);
+    return () => { if (swRaf.current) cancelAnimationFrame(swRaf.current); };
+  }, [swRunning, swTick]);
 
-  // rAF is throttled/paused while the tab is hidden — recompute on return.
+  // ---- Rest loop (independent of the stopwatch) ----
+  const restTick = useCallback(() => {
+    const rem = restEnd.current - performance.now();
+    if (rem <= 0) {
+      remainingRef.current = 0;
+      setRemaining(0);
+      setRestRunning(false);
+      setRestFinished(true);
+      finishFeedback();
+      return;
+    }
+    remainingRef.current = rem;
+    setRemaining(rem);
+    restRaf.current = requestAnimationFrame(restTick);
+  }, []);
+  useEffect(() => {
+    if (restRunning) restRaf.current = requestAnimationFrame(restTick);
+    return () => { if (restRaf.current) cancelAnimationFrame(restRaf.current); };
+  }, [restRunning, restTick]);
+
+  // rAF is paused while the tab is hidden — recompute both on return.
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState !== 'visible' || !running) return;
+      if (document.visibilityState !== 'visible') return;
       const now = performance.now();
-      if (mode === 'stopwatch') setElapsed(now - swAnchor.current);
-      else {
-        const rem = timerEnd.current - now;
-        if (rem <= 0) { setRemaining(0); setRunning(false); setFinished(true); }
-        else setRemaining(rem);
+      if (swRunning) { const v = now - swAnchor.current; elapsedRef.current = v; setElapsed(v); }
+      if (restRunning) {
+        const rem = restEnd.current - now;
+        if (rem <= 0) { remainingRef.current = 0; setRemaining(0); setRestRunning(false); setRestFinished(true); }
+        else { remainingRef.current = rem; setRemaining(rem); }
       }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [running, mode]);
+  }, [swRunning, restRunning]);
 
-  const start = useCallback(() => {
-    const now = performance.now();
-    setFinished(false);
-    if (mode === 'stopwatch') {
-      swAnchor.current = now - elapsed;
-    } else {
-      const base = remaining > 0 ? remaining : duration;
-      if (remaining <= 0) setRemaining(duration);
-      timerEnd.current = now + base;
-    }
-    setRunning(true);
-  }, [mode, elapsed, remaining, duration]);
+  // ---- Stopwatch controls ----
+  const startSw = useCallback(() => { swAnchor.current = performance.now() - elapsedRef.current; setSwRunning(true); }, []);
+  const pauseSw = useCallback(() => setSwRunning(false), []);
+  // Reset keeps it running (restarts from zero) so it stays visible.
+  const resetSw = useCallback(() => {
+    elapsedRef.current = 0;
+    setElapsed(0);
+    setLaps([]);
+    swAnchor.current = performance.now();
+  }, []);
+  // Close fully stops & clears (overlay disappears).
+  const closeSw = useCallback(() => {
+    setSwRunning(false);
+    elapsedRef.current = 0;
+    setElapsed(0);
+    setLaps([]);
+  }, []);
+  const addLap = useCallback(() => setLaps(p => [...p, elapsedRef.current]), []);
 
-  const pause = useCallback(() => setRunning(false), []);
-
-  const reset = useCallback(() => {
-    setRunning(false);
-    setFinished(false);
-    if (mode === 'stopwatch') { setElapsed(0); setLaps([]); }
-    else setRemaining(duration);
-  }, [mode, duration]);
-
-  const addLap = useCallback(() => setLaps(prev => [...prev, elapsed]), [elapsed]);
-
-  const adjustDuration = useCallback((deltaSec: number) => {
-    if (running) return;
-    setDuration(d => {
-      const next = Math.max(5_000, Math.min(59 * 60_000, d + deltaSec * 1000));
-      setRemaining(next);
-      return next;
-    });
-  }, [running]);
-
-  const setPreset = useCallback((sec: number) => {
-    if (running) return;
-    setDuration(sec * 1000);
-    setRemaining(sec * 1000);
-    setFinished(false);
-  }, [running]);
-
-  const switchMode = useCallback((m: TimerMode) => {
-    setMode(prev => {
-      if (prev === m) return prev;
-      setRunning(false);
-      setFinished(false);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      return m;
+  // ---- Rest controls ----
+  const startRest = useCallback(() => {
+    const base = remainingRef.current > 0 ? remainingRef.current : durationRef.current;
+    remainingRef.current = base;
+    setRemaining(base);
+    restEnd.current = performance.now() + base;
+    setRestFinished(false);
+    setRestRunning(true);
+  }, []);
+  const pauseRest = useCallback(() => setRestRunning(false), []);
+  // Reset restarts from the full duration (keeps running if it was running).
+  const resetRest = useCallback(() => {
+    remainingRef.current = durationRef.current;
+    setRemaining(durationRef.current);
+    setRestFinished(false);
+    setRestRunning(prev => {
+      if (prev) restEnd.current = performance.now() + durationRef.current;
+      return prev;
     });
   }, []);
+  const closeRest = useCallback(() => {
+    setRestRunning(false);
+    setRestFinished(false);
+    remainingRef.current = durationRef.current;
+    setRemaining(durationRef.current);
+  }, []);
+  const adjustDuration = useCallback((deltaSec: number) => {
+    if (restRunning) return;
+    const next = Math.max(5_000, Math.min(59 * 60_000, durationRef.current + deltaSec * 1000));
+    durationRef.current = next;
+    remainingRef.current = next;
+    setDuration(next);
+    setRemaining(next);
+    setRestFinished(false);
+  }, [restRunning]);
+  const setPreset = useCallback((sec: number) => {
+    if (restRunning) return;
+    const ms = sec * 1000;
+    durationRef.current = ms;
+    remainingRef.current = ms;
+    setDuration(ms);
+    setRemaining(ms);
+    setRestFinished(false);
+  }, [restRunning]);
 
-  const acknowledge = useCallback(() => setFinished(false), []);
+  // Switching the view never stops either timer.
+  const switchMode = useCallback((m: TimerMode) => setMode(m), []);
 
-  const isTimerDone = mode === 'timer' && remaining <= 0;
-  const isActive = running || finished;
-  const progress = mode === 'stopwatch'
-    ? (elapsed % 60_000) / 60_000
-    : duration > 0 ? remaining / duration : 0;
+  const swProgress = (elapsed % 60_000) / 60_000;
+  const restProgress = duration > 0 ? remaining / duration : 0;
+
+  // Rest timer takes priority in the overlay (it's the time-critical one).
+  const overlayTarget: OverlayTarget =
+    restRunning || restFinished ? 'timer' : swRunning ? 'stopwatch' : null;
 
   const value: TimerContextValue = {
-    mode, running, elapsed, laps, duration, remaining, isTimerDone, isActive, progress,
-    start, pause, reset, addLap, adjustDuration, setPreset, switchMode, acknowledge,
+    mode, switchMode,
+    swRunning, elapsed, laps, swProgress, startSw, pauseSw, resetSw, closeSw, addLap,
+    restRunning, remaining, duration, restFinished, restProgress,
+    startRest, pauseRest, resetRest, closeRest, adjustDuration, setPreset,
+    overlayTarget,
   };
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;

@@ -28,6 +28,8 @@ export interface Routine {
   name: string;
   dayLabel?: string; // e.g. "Push day"
   exercises: RoutineExercise[];
+  showOnTrain?: boolean; // undefined === true (shown on the Train page)
+  order?: number;        // manual sort order; undefined sorts last
   updatedAt: number;
 }
 

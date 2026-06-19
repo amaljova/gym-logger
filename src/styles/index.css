@@ -19,30 +19,33 @@
   --text-primary: #f6f4f2;
   --text-secondary: #a8a29e;
   --text-muted: #57534e;
-  --hairline: rgba(255, 255, 255, 0.04);
-  --on-accent: #1a0f06;
+  --hairline: rgba(255, 255, 255, 0.05);
+  --on-accent: #14130a; /* dark text — high contrast on green & amber fills */
   --overlay: rgba(0, 0, 0, 0.7);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
 
-  /* Warm accent system — coral primary, amber secondary */
-  --accent: #f0743f;
-  --accent-hover: #e7652f;
+  /* Two-color brand system — green primary, amber secondary */
+  --accent: #84c14e;
+  --accent-hover: #76b441;
   --accent-secondary: #f3b13c;
-  --accent-bg: rgba(240, 116, 63, 0.12);
-  --accent-border: rgba(240, 116, 63, 0.30);
-  --accent-glow: rgba(240, 116, 63, 0.35);
-  --accent-gradient: linear-gradient(135deg, #f0743f 0%, #f3a83c 100%);
-  --accent-gradient-subtle: linear-gradient(135deg, rgba(240, 116, 63, 0.18) 0%, rgba(243, 177, 60, 0.10) 100%);
+  --accent-bg: rgba(132, 193, 78, 0.14);
+  --accent-border: rgba(132, 193, 78, 0.45);
+  --accent-glow: rgba(132, 193, 78, 0.30);
+  --accent-gradient: linear-gradient(135deg, #84c14e 0%, #a7d36a 100%);
+  --accent-gradient-subtle: linear-gradient(135deg, rgba(132, 193, 78, 0.18) 0%, rgba(243, 177, 60, 0.10) 100%);
 
-  /* Secondary brand hues from the palette */
+  /* Amber (secondary) */
   --amber: #f3b13c;
-  --green: #88c057;
+  --amber-hover: #e8a52e;
+  --amber-bg: rgba(243, 177, 60, 0.16);
+  --amber-border: rgba(243, 177, 60, 0.45);
+  --green: #84c14e;
 
-  /* Set-type tags */
+  /* Set-type tags (amber / green; red kept only for the semantic "failure") */
   --type-warmup: #f3b13c;
-  --type-warmup-bg: rgba(243, 177, 60, 0.15);
-  --type-drop: #88c057;
-  --type-drop-bg: rgba(136, 192, 87, 0.16);
+  --type-warmup-bg: rgba(243, 177, 60, 0.16);
+  --type-drop: #84c14e;
+  --type-drop-bg: rgba(132, 193, 78, 0.16);
   --type-failure: #ef4444;
   --type-failure-bg: rgba(239, 68, 68, 0.15);
 
@@ -75,27 +78,30 @@
   --text-secondary: #57534e;
   --text-muted: #a8a29e;
   --hairline: rgba(28, 20, 12, 0.05);
-  --on-accent: #ffffff;
+  --on-accent: #14130a; /* dark text on green/amber fills in both themes */
   --overlay: rgba(28, 20, 12, 0.40);
   --shadow-lg: 0 16px 48px rgba(28, 20, 12, 0.16);
 
-  /* Slightly deeper coral for legibility on light surfaces */
-  --accent: #e25b29;
-  --accent-hover: #d24f20;
-  --accent-secondary: #e89a1f;
-  --accent-bg: rgba(226, 91, 41, 0.10);
-  --accent-border: rgba(226, 91, 41, 0.30);
-  --accent-glow: rgba(226, 91, 41, 0.22);
-  --accent-gradient: linear-gradient(135deg, #e25b29 0%, #ef9a36 100%);
-  --accent-gradient-subtle: linear-gradient(135deg, rgba(226, 91, 41, 0.16) 0%, rgba(239, 154, 54, 0.08) 100%);
+  /* Two-color brand system — green primary, amber secondary (deeper for contrast) */
+  --accent: #5fa233;
+  --accent-hover: #538f2c;
+  --accent-secondary: #d98a13;
+  --accent-bg: rgba(95, 162, 51, 0.12);
+  --accent-border: rgba(95, 162, 51, 0.45);
+  --accent-glow: rgba(95, 162, 51, 0.22);
+  --accent-gradient: linear-gradient(135deg, #5fa233 0%, #8cc35a 100%);
+  --accent-gradient-subtle: linear-gradient(135deg, rgba(95, 162, 51, 0.16) 0%, rgba(217, 138, 19, 0.08) 100%);
 
-  --amber: #e0951c;
-  --green: #5f9e34;
+  --amber: #e0a020;
+  --amber-hover: #cf9015;
+  --amber-bg: rgba(224, 160, 32, 0.14);
+  --amber-border: rgba(224, 160, 32, 0.45);
+  --green: #5fa233;
 
-  --type-warmup: #d98a13;
-  --type-warmup-bg: rgba(217, 138, 19, 0.14);
-  --type-drop: #5f9e34;
-  --type-drop-bg: rgba(95, 158, 52, 0.15);
+  --type-warmup: #c98910;
+  --type-warmup-bg: rgba(201, 137, 16, 0.14);
+  --type-drop: #5fa233;
+  --type-drop-bg: rgba(95, 162, 51, 0.15);
   --type-failure: #dc2626;
   --type-failure-bg: rgba(220, 38, 38, 0.12);
 
@@ -239,30 +245,35 @@ input, textarea, select {
   transform: scale(0.97);
 }
 
+/* Solid buttons: fill and border share the same color (see --on-accent text). */
 .btn-primary {
   background: var(--accent);
+  border: 1px solid var(--accent);
   color: var(--on-accent);
   font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
-/* Solid amber / green action buttons — dark text for contrast on light hues */
 .btn-amber {
   background: var(--amber);
-  color: #1a1208;
+  border: 1px solid var(--amber);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
 .btn-amber:hover:not(:disabled) {
-  filter: brightness(1.04);
+  background: var(--amber-hover);
+  border-color: var(--amber-hover);
 }
 
 .btn-green {
   background: var(--green);
-  color: #1a1208;
+  border: 1px solid var(--green);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -507,6 +518,65 @@ input, textarea, select {
 
 .col-span-2 { grid-column: span 2; }
 .row-span-2 { grid-row: span 2; }
+
+/* Drag handle + "today" badge for reorderable routine lists */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 38px;
+  flex-shrink: 0;
+  margin-left: -6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+  border-radius: 8px;
+}
+.drag-handle:active { cursor: grabbing; color: var(--text-secondary); }
+
+.today-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Toggle switch (e.g. "show on Train") */
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--hairline);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  padding: 0;
+}
+.toggle-switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-card-solid);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toggle-switch.on .knob { transform: translateX(16px); }
 
 .empty-state {
   display: flex;
@@ -823,7 +893,7 @@ input, textarea, select {
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .sw-fab:active { transform: scale(0.93); }
-.sw-fab-primary { background: var(--accent-gradient); color: var(--on-accent); box-shadow: 0 6px 24px var(--accent-glow); }
+.sw-fab-primary { background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); box-shadow: 0 6px 24px var(--accent-glow); }
 .sw-fab-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
 .sw-fab-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
 
@@ -900,19 +970,30 @@ input, textarea, select {
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
+.timer-overlay-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .timer-overlay-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   flex-shrink: 0;
   background: var(--accent);
   color: var(--on-accent);
-  border: none;
+  border: 1px solid var(--accent);
   cursor: pointer;
   transition: transform 0.15s ease;
+}
+.timer-overlay-btn.ghost {
+  background: var(--hairline);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 .timer-overlay-btn:active { transform: scale(0.92); }
 

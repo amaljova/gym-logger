@@ -6,27 +6,38 @@ const CIRC = 2 * Math.PI * RADIUS;
 
 export default function StopwatchScreen() {
   const {
-    mode, running, elapsed, laps, duration, remaining, isTimerDone, progress,
-    start, pause, reset, addLap, adjustDuration, setPreset, switchMode,
+    mode, switchMode,
+    swRunning, elapsed, laps, swProgress, startSw, pauseSw, resetSw, addLap,
+    restRunning, remaining, duration, restFinished, restProgress,
+    startRest, pauseRest, resetRest, adjustDuration, setPreset,
   } = useTimer();
 
+  const isStopwatch = mode === 'stopwatch';
+  const running = isStopwatch ? swRunning : restRunning;
+  const progress = isStopwatch ? swProgress : restProgress;
   const dashOffset = CIRC * (1 - progress);
   const sw = fmtStopwatch(elapsed);
+  const isTimerDone = !isStopwatch && restFinished;
+
+  const onPrimary = () => {
+    if (isStopwatch) running ? pauseSw() : startSw();
+    else running ? pauseRest() : startRest();
+  };
 
   return (
     <div className="screen" style={{ paddingBottom: '24px' }}>
       <div className="screen-header" style={{ marginBottom: '18px' }}>
         <h1 className="screen-title">Timer</h1>
-        <p className="screen-subtitle">{mode === 'stopwatch' ? 'Stopwatch & laps' : 'Rest between sets'}</p>
+        <p className="screen-subtitle">{isStopwatch ? 'Stopwatch & laps' : 'Rest between sets'}</p>
       </div>
 
-      {/* Mode switch */}
+      {/* Mode switch — switching never stops a running timer */}
       <div className="segmented" style={{ marginBottom: '8px' }}>
-        <button className={mode === 'stopwatch' ? 'active' : ''} onClick={() => switchMode('stopwatch')}>
-          <Watch size={15} /> Stopwatch
+        <button className={isStopwatch ? 'active' : ''} onClick={() => switchMode('stopwatch')}>
+          <Watch size={15} /> Stopwatch{swRunning ? ' •' : ''}
         </button>
-        <button className={mode === 'timer' ? 'active' : ''} onClick={() => switchMode('timer')}>
-          <TimerIcon size={15} /> Rest timer
+        <button className={!isStopwatch ? 'active' : ''} onClick={() => switchMode('timer')}>
+          <TimerIcon size={15} /> Rest timer{restRunning ? ' •' : ''}
         </button>
       </div>
 
@@ -47,7 +58,7 @@ export default function StopwatchScreen() {
         </svg>
 
         <div style={{ position: 'absolute', textAlign: 'center' }}>
-          {mode === 'stopwatch' ? (
+          {isStopwatch ? (
             <div className="sw-time" style={{ fontSize: '46px' }}>
               {sw.main}
               <span style={{ fontSize: '22px', color: 'var(--text-secondary)' }}>.{sw.cs}</span>
@@ -58,13 +69,13 @@ export default function StopwatchScreen() {
             </div>
           )}
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>
-            {running ? 'Running' : mode === 'timer' && isTimerDone ? 'Time to lift' : 'Paused'}
+            {running ? 'Running' : isTimerDone ? 'Time to lift' : 'Paused'}
           </div>
         </div>
       </div>
 
-      {/* Timer presets / adjust (timer mode, when not running) */}
-      {mode === 'timer' && !running && (
+      {/* Rest presets / adjust (only in rest mode while paused) */}
+      {!isStopwatch && !running && (
         <div style={{ marginTop: '6px', marginBottom: '4px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', marginBottom: '12px' }}>
             {PRESETS.map(p => {
@@ -104,33 +115,30 @@ export default function StopwatchScreen() {
 
       {/* Controls */}
       <div className="sw-controls">
-        {mode === 'stopwatch' && (
-          <button
-            className="sw-fab sw-fab-secondary"
-            onClick={running ? addLap : reset}
-            aria-label={running ? 'Lap' : 'Reset'}
-          >
+        {isStopwatch ? (
+          <button className="sw-fab sw-fab-secondary" onClick={running ? addLap : resetSw} aria-label={running ? 'Lap' : 'Reset'}>
             {running ? <Flag size={24} /> : <RotateCcw size={24} />}
+          </button>
+        ) : (
+          <button className="sw-fab sw-fab-secondary" onClick={resetRest} aria-label="Reset">
+            <RotateCcw size={24} />
           </button>
         )}
 
         <button
           className={`sw-fab ${running ? 'sw-fab-danger' : 'sw-fab-primary'}`}
-          onClick={running ? pause : start}
+          onClick={onPrimary}
           aria-label={running ? 'Pause' : 'Start'}
         >
           {running ? <Pause size={28} /> : <Play size={28} style={{ marginLeft: '3px' }} />}
         </button>
 
-        {mode === 'timer' && (
-          <button className="sw-fab sw-fab-secondary" onClick={reset} aria-label="Reset">
-            <RotateCcw size={24} />
-          </button>
-        )}
+        {/* keep the control row balanced */}
+        <div style={{ width: 72 }} aria-hidden />
       </div>
 
       {/* Laps (newest first) */}
-      {mode === 'stopwatch' && laps.length > 0 && (
+      {isStopwatch && laps.length > 0 && (
         <div style={{ marginTop: '24px' }}>
           {laps.slice().reverse().map((lapTime, ri) => {
             const chronoIndex = laps.length - 1 - ri;

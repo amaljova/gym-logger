@@ -201,19 +201,19 @@ export default function ProgressScreen() {
 
           {/* Personal Record Cards + Chart — bento grid */}
           <div className="bento-grid">
-            <div className="bento-tile" style={{ background: 'var(--accent-bg)', borderColor: 'var(--accent-border)', textAlign: 'center', alignItems: 'center' }}>
+            <div className="bento-tile" style={{ background: 'var(--amber-bg)', borderColor: 'var(--amber-border)', textAlign: 'center', alignItems: 'center' }}>
               <div style={styles.prHeader}>
-                <Award size={14} style={{ color: 'var(--accent)' }} />
+                <Award size={14} style={{ color: 'var(--amber)' }} />
                 <span style={styles.prLabel}>All-Time 1RM</span>
               </div>
-              <span style={{ ...styles.prValue, color: 'var(--accent)' }}>{personalRecords.max1RM} kg</span>
+              <span style={{ ...styles.prValue, color: 'var(--amber)' }}>{personalRecords.max1RM} kg</span>
             </div>
-            <div className="bento-tile" style={{ background: 'var(--type-drop-bg)', borderColor: 'var(--green)', textAlign: 'center', alignItems: 'center' }}>
+            <div className="bento-tile" style={{ background: 'var(--accent-bg)', borderColor: 'var(--accent-border)', textAlign: 'center', alignItems: 'center' }}>
               <div style={styles.prHeader}>
-                <BarChart2 size={14} style={{ color: 'var(--green)' }} />
+                <BarChart2 size={14} style={{ color: 'var(--accent)' }} />
                 <span style={styles.prLabel}>All-Time Top Set</span>
               </div>
-              <span style={{ ...styles.prValue, color: 'var(--green)' }}>{personalRecords.maxTopWeight} kg</span>
+              <span style={{ ...styles.prValue, color: 'var(--accent)' }}>{personalRecords.maxTopWeight} kg</span>
             </div>
 
           {/* SVG Chart */}
@@ -367,10 +367,6 @@ const styles = {
     fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-  },
-  prContainer: {
-    display: 'flex',
-    gap: '12px',
   },
   prHeader: {
     display: 'flex',

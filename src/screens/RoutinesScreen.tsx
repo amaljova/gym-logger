@@ -3,10 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Routine, type RoutineExercise, type Exercise } from '../db/db';
 import {
   Plus, Trash2, Edit3, X, Search, ChevronDown, ChevronUp,
-  ClipboardList, Minus, Save, Dumbbell
+  ClipboardList, Minus, Save, Dumbbell, GripVertical
 } from 'lucide-react';
 import { uuid } from '../utils/uuid';
 import { getMuscleGroups } from '../utils/muscleGroups';
+import { sortRoutines, isShownOnTrain, persistRoutineOrder } from '../utils/routineOrder';
+import SortableList from '../components/SortableList';
 
 type ModalMode = 'closed' | 'create' | 'edit';
 
@@ -98,6 +100,14 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
     }
   };
 
+  // Toggle whether a routine is pinned to the Train page.
+  const handleToggleShow = async (routine: Routine, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await db.routines.update(routine.id, { showOnTrain: !isShownOnTrain(routine), updatedAt: Date.now() });
+  };
+
+  const sortedRoutines = sortRoutines(routines);
+
   // ---- Exercise management within form ----
 
   const addExerciseToForm = (exerciseId: string) => {
@@ -175,9 +185,13 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {routines.map(routine => {
+        <SortableList
+          items={sortedRoutines}
+          gap={12}
+          onReorder={(ids) => persistRoutineOrder(ids)}
+          renderItem={(routine, { dragging, handleProps }) => {
             const isExpanded = expandedRoutineId === routine.id;
+            const shown = isShownOnTrain(routine);
             const musclesUsed = Array.from(
               new Set(
                 routine.exercises
@@ -190,16 +204,19 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
               <div key={routine.id} style={{
                 ...cardStyles.routineCard,
                 borderColor: isExpanded ? 'var(--border-focus)' : 'var(--glass-border)',
+                boxShadow: dragging ? 'var(--shadow-lg)' : 'none',
+                transform: dragging ? 'scale(1.01)' : 'none',
               }}>
                 {/* Card Header */}
                 <div
                   style={cardStyles.cardHeader}
                   onClick={() => setExpandedRoutineId(isExpanded ? null : routine.id)}
                 >
+                  <button {...handleProps} className="drag-handle" aria-label="Drag to reorder">
+                    <GripVertical size={18} />
+                  </button>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: '600', fontSize: '16px' }}>{routine.name}</span>
-                    </div>
+                    <span style={{ fontWeight: '600', fontSize: '16px' }}>{routine.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' as const }}>
                       {routine.dayLabel && (
                         <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -211,7 +228,17 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
                       </span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                    <button
+                      className={`toggle-switch${shown ? ' on' : ''}`}
+                      onClick={(e) => handleToggleShow(routine, e)}
+                      role="switch"
+                      aria-checked={shown}
+                      aria-label="Show on Train page"
+                      title={shown ? 'Shown on Train page' : 'Hidden from Train page'}
+                    >
+                      <span className="knob" />
+                    </button>
                     {isExpanded
                       ? <ChevronUp size={18} className="text-secondary" />
                       : <ChevronDown size={18} className="text-secondary" />}
@@ -279,8 +306,8 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
                 )}
               </div>
             );
-          })}
-        </div>
+          }}
+        />
       )}
 
       {/* ==================== CREATE / EDIT MODAL ==================== */}
