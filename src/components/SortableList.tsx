@@ -18,39 +18,39 @@ interface SortableListProps<T extends Item> {
  * Pointer-event based reorderable list that works with both touch and mouse
  * (HTML5 drag-and-drop does not work on touch devices). Attach `handleProps`
  * to a dedicated drag handle inside each item.
+ *
+ * When not dragging it renders straight from `items`, so live data changes
+ * (e.g. toggling a field) are reflected immediately. A local id ordering is
+ * only kept for the duration of a drag.
  */
 export default function SortableList<T extends Item>({ items, onReorder, renderItem, gap = 10 }: SortableListProps<T>) {
-  const [order, setOrder] = useState<T[]>(items);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOrder, setDragOrder] = useState<string[] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const orderRef = useRef(order);
-  orderRef.current = order;
+  const dragOrderRef = useRef<string[] | null>(null);
+
+  // Keep the latest onReorder callback without re-subscribing listeners.
   const onReorderRef = useRef(onReorder);
-  onReorderRef.current = onReorder;
+  useEffect(() => { onReorderRef.current = onReorder; }, [onReorder]);
 
-  // Re-sync from props when the list changes and we're not mid-drag.
-  useEffect(() => {
-    if (draggingId) return;
-    setOrder(prev => {
-      const same = prev.length === items.length && prev.every((p, i) => p.id === items[i].id);
-      return same ? prev : items;
-    });
-  }, [items, draggingId]);
+  // While dragging, render the local ordering mapped to the freshest item data;
+  // otherwise render the live `items` directly so external updates show at once.
+  const display: T[] = draggingId && dragOrder
+    ? (dragOrder.map(id => items.find(i => i.id === id)).filter(Boolean) as T[])
+    : items;
 
-  // Drive the drag from document-level listeners so the finger is tracked
-  // even when it leaves the handle element.
   useEffect(() => {
     if (!draggingId) return;
 
     const move = (e: PointerEvent) => {
       e.preventDefault();
       const container = containerRef.current;
-      if (!container) return;
-      const els = Array.from(container.children) as HTMLElement[];
-      const cur = orderRef.current;
-      const fromIndex = cur.findIndex(o => o.id === draggingId);
+      const cur = dragOrderRef.current;
+      if (!container || !cur) return;
+      const fromIndex = cur.indexOf(draggingId);
       if (fromIndex === -1) return;
 
+      const els = Array.from(container.children) as HTMLElement[];
       let overIndex = -1;
       for (let i = 0; i < els.length; i++) {
         const r = els[i].getBoundingClientRect();
@@ -61,12 +61,16 @@ export default function SortableList<T extends Item>({ items, onReorder, renderI
       const next = cur.slice();
       const [moved] = next.splice(fromIndex, 1);
       next.splice(overIndex, 0, moved);
-      setOrder(next);
+      dragOrderRef.current = next;
+      setDragOrder(next);
     };
 
     const up = () => {
+      const ids = dragOrderRef.current;
+      dragOrderRef.current = null;
       setDraggingId(null);
-      onReorderRef.current(orderRef.current.map(it => it.id));
+      setDragOrder(null);
+      if (ids) onReorderRef.current(ids);
     };
 
     document.addEventListener('pointermove', move, { passive: false });
@@ -83,6 +87,9 @@ export default function SortableList<T extends Item>({ items, onReorder, renderI
     onPointerDown: (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const ids = items.map(i => i.id);
+      dragOrderRef.current = ids;
+      setDragOrder(ids);
       setDraggingId(id);
     },
     style: { touchAction: 'none', cursor: 'grab' },
@@ -90,7 +97,7 @@ export default function SortableList<T extends Item>({ items, onReorder, renderI
 
   return (
     <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: `${gap}px` }}>
-      {order.map(item => renderItem(item, { dragging: draggingId === item.id, handleProps: makeHandleProps(item.id) }))}
+      {display.map(item => renderItem(item, { dragging: draggingId === item.id, handleProps: makeHandleProps(item.id) }))}
     </div>
   );
 }

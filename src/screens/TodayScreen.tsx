@@ -841,25 +841,6 @@ const styles = {
     fontSize: '13px',
     color: 'var(--text-secondary)',
   },
-  statTile: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: '2px',
-    minHeight: '88px',
-  },
-  statTileVal: {
-    fontSize: '32px',
-    fontWeight: '700',
-    lineHeight: '1',
-    letterSpacing: '-0.5px',
-  },
-  statTileLbl: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.6px',
-    fontWeight: '500',
-  },
   routineHeaderRow: {
     display: 'flex',
     alignItems: 'center',

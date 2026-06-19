@@ -49,8 +49,6 @@ function finishFeedback() {
 
 export const PRESETS = [30, 60, 90, 120, 180]; // seconds
 
-export type OverlayTarget = 'stopwatch' | 'timer' | null;
-
 interface TimerContextValue {
   mode: TimerMode;            // which view is selected on the Timer screen
   switchMode: (m: TimerMode) => void;
