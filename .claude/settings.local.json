@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(cat vite.config.ts)",
+      "Bash(cat vite.config.js)",
+      "Bash(npx vite *)",
+      "Bash(grep -iE \"^sharp$|^canvas$|^pngjs$|^jimp$\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>console.log\\(JSON.stringify\\(JSON.parse\\(d\\).icons,null,1\\)\\)\\)\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>console.log\\('scripts:',JSON.stringify\\(JSON.parse\\(d\\).scripts,null,1\\)\\)\\)\")",
+      "Bash(pkill -f \"vite dev\")",
+      "Bash(pkill -f \"vite preview\")"
+    ]
+  }
+}
