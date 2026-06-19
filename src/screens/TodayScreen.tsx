@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Workout, type WorkoutSet, type Exercise, type Routine } from '../db/db';
+import { db, type Workout, type WorkoutSet, type Exercise, type Routine, type SetType } from '../db/db';
 import {
   Plus, Minus, Check, ChevronDown, ChevronUp, Trash2,
   Dumbbell, Play, PlusCircle, Save, X, Search, MessageSquare
 } from 'lucide-react';
 import { uuid } from '../utils/uuid';
+import { getMuscleGroups } from '../utils/muscleGroups';
+
+// Visual styling per set type. `normal` shows the plain set number.
+const SET_TYPE_META: Record<Exclude<SetType, 'normal'>, { label: string; color: string; bg: string }> = {
+  warmup: { label: 'W', color: 'var(--type-warmup)', bg: 'var(--type-warmup-bg)' },
+  drop: { label: 'D', color: 'var(--type-drop)', bg: 'var(--type-drop-bg)' },
+  failure: { label: 'F', color: 'var(--type-failure)', bg: 'var(--type-failure-bg)' },
+};
 
 interface TodayScreenProps {
   onNavigateToRoutines?: () => void;
@@ -135,7 +143,10 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
   const exercisesCount = uniqueExerciseIds.length;
   const completedSetsCount = activeSets.filter(s => s.completed).length;
   const totalSetsCount = activeSets.length;
-  const totalVolume = activeSets.filter(s => s.completed).reduce((sum, s) => sum + s.weight * s.reps, 0);
+  // Warm-up sets are excluded from working volume (standard convention).
+  const totalVolume = activeSets
+    .filter(s => s.completed && s.setType !== 'warmup')
+    .reduce((sum, s) => sum + s.weight * s.reps, 0);
   const progressPct = totalSetsCount > 0 ? Math.round((completedSetsCount / totalSetsCount) * 100) : 0;
 
   const handleStartFreestyle = async () => {
@@ -301,6 +312,15 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
     }
   };
 
+  // Tap the set-number badge to cycle: normal → warm-up → drop → failure → normal
+  const handleCycleSetType = async (set: WorkoutSet) => {
+    const order: SetType[] = ['normal', 'warmup', 'drop', 'failure'];
+    const current = set.setType || 'normal';
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    if ('vibrate' in navigator) navigator.vibrate(15);
+    await db.sets.update(set.id, { setType: next, updatedAt: Date.now() });
+  };
+
   // BUG FIX: Re-fetch sets from DB to avoid stale closure
   const handleFinishWorkout = async () => {
     if (!activeWorkout) return;
@@ -358,7 +378,7 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
     return matchesSearch && matchesMuscle;
   });
 
-  const muscleGroups = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
+  const muscleGroups = ['All', ...getMuscleGroups(exercises)];
 
   return (
     <div className="screen">
@@ -460,7 +480,7 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
                 return (
                   <div key={ex.id} style={{
                     ...styles.exerciseCard,
-                    borderColor: isExpanded ? 'rgba(93,202,165,0.35)' : 'var(--border-color)',
+                    borderColor: isExpanded ? 'var(--accent-border)' : 'var(--border-color)',
                   }}>
                     {/* Header */}
                     <div style={styles.exerciseHeader} onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}>
@@ -505,17 +525,31 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
                           {exSets.map((set) => {
                             const isNew = newSetIds.has(set.id);
                             const isCompletedAnim = completedAnimIds.has(set.id);
+                            const typeMeta = set.setType && set.setType !== 'normal' ? SET_TYPE_META[set.setType] : null;
                             return (
                               <div
                                 key={set.id}
                                 className={`${isNew ? 'anim-slide-in' : ''} ${isCompletedAnim ? 'anim-set-complete' : ''}`}
                                 style={{
                                   ...styles.setRow,
-                                  backgroundColor: set.completed ? 'rgba(93,202,165,0.07)' : 'transparent',
-                                  borderColor: set.completed ? 'rgba(93,202,165,0.22)' : 'var(--border-color)',
+                                  backgroundColor: set.completed ? 'var(--accent-bg)' : 'transparent',
+                                  borderColor: set.completed ? 'var(--accent-border)' : 'var(--border-color)',
                                 }}
                               >
-                                <span style={styles.setNumberCol}>{set.setNumber}</span>
+                                {/* Set number — tap to cycle set type */}
+                                <button
+                                  onClick={() => handleCycleSetType(set)}
+                                  style={{
+                                    ...styles.setTypeBadge,
+                                    color: typeMeta ? typeMeta.color : 'var(--text-muted)',
+                                    backgroundColor: typeMeta ? typeMeta.bg : 'transparent',
+                                    borderColor: typeMeta ? typeMeta.color : 'var(--border-color)',
+                                  }}
+                                  title={`Set type: ${set.setType || 'normal'} — tap to change`}
+                                  aria-label={`Set ${set.setNumber}, type ${set.setType || 'normal'}, tap to change`}
+                                >
+                                  {typeMeta ? typeMeta.label : set.setNumber}
+                                </button>
 
                                 {/* Weight */}
                                 <div style={styles.inputStepperCol}>
@@ -560,10 +594,11 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
                                       ...styles.checkBtn,
                                       backgroundColor: set.completed ? 'var(--accent)' : 'transparent',
                                       borderColor: set.completed ? 'var(--accent)' : 'var(--border-color)',
+                                      color: 'var(--on-accent)',
                                     }}
                                     aria-label="Complete set"
                                   >
-                                    {set.completed && <Check size={13} color="#0a0a0c" strokeWidth={3} />}
+                                    {set.completed && <Check size={13} strokeWidth={3} />}
                                   </button>
                                   <button onClick={() => handleRemoveSet(set.id)} style={styles.deleteSetBtn} aria-label="Delete set">
                                     <X size={13} />
@@ -572,6 +607,14 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
                               </div>
                             );
                           })}
+                        </div>
+
+                        {/* Set-type legend */}
+                        <div style={styles.typeLegend}>
+                          Tap the set number to mark:
+                          <span style={{ color: 'var(--type-warmup)', fontWeight: 600 }}> W</span> warm-up ·
+                          <span style={{ color: 'var(--type-drop)', fontWeight: 600 }}> D</span> drop ·
+                          <span style={{ color: 'var(--type-failure)', fontWeight: 600 }}> F</span> failure
                         </div>
 
                         {/* Notes */}
@@ -785,7 +828,7 @@ const styles = {
     padding: '6px 10px',
     borderRadius: '7px',
     borderLeft: '2px solid var(--accent)',
-    backgroundColor: 'rgba(93,202,165,0.04)',
+    backgroundColor: 'var(--accent-bg)',
   },
   setRowHeader: {
     display: 'flex',
@@ -807,11 +850,26 @@ const styles = {
     transition: 'background-color 0.25s ease, border-color 0.25s ease',
     minHeight: '44px',
   },
-  setNumberCol: {
-    width: '10%',
-    fontSize: '13px',
-    fontWeight: '600',
+  typeLegend: {
+    fontSize: '10.5px',
     color: 'var(--text-muted)',
+    marginTop: '8px',
+    lineHeight: '1.5',
+  },
+  setTypeBadge: {
+    width: '30px',
+    height: '30px',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '13px',
+    fontWeight: '700',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    marginRight: '6px',
   },
   inputStepperCol: {
     width: '37%',

@@ -23,7 +23,7 @@ function resolve(pref: ThemePref): ResolvedTheme {
 function apply(resolved: ResolvedTheme) {
   document.documentElement.setAttribute('data-theme', resolved);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0a0c' : '#f4f5f7');
+  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#141215' : '#f4f1ea');
 }
 
 export function useTheme() {

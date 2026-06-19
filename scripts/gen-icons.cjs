@@ -54,13 +54,13 @@ function roundRect(c, s, ox, oy, x, y, w, h, r, color) {
 function drawDumbbell(c, scale, ox, oy) {
   const s = scale;
   // shaft
-  roundRect(c, s, ox, oy, 25, 44, 50, 12, 4, hex('#a1a1aa'));
+  roundRect(c, s, ox, oy, 25, 44, 50, 12, 4, hex('#a8a29e'));
   // left plates
-  roundRect(c, s, ox, oy, 15, 25, 8, 50, 4, hex('#5dcaa5'));
-  roundRect(c, s, ox, oy, 7, 30, 6, 40, 3, hex('#38b2ac'));
+  roundRect(c, s, ox, oy, 15, 25, 8, 50, 4, hex('#f0743f'));
+  roundRect(c, s, ox, oy, 7, 30, 6, 40, 3, hex('#f3a83c'));
   // right plates
-  roundRect(c, s, ox, oy, 77, 25, 8, 50, 4, hex('#5dcaa5'));
-  roundRect(c, s, ox, oy, 87, 30, 6, 40, 3, hex('#38b2ac'));
+  roundRect(c, s, ox, oy, 77, 25, 8, 50, 4, hex('#f0743f'));
+  roundRect(c, s, ox, oy, 87, 30, 6, 40, 3, hex('#f3a83c'));
   // highlight line (approx as thin rounded rect)
   roundRect(c, s, ox, oy, 30, 49, 40, 2, 1, hex('#ffffff', 150));
 }
@@ -70,9 +70,9 @@ function render(size, { maskable = false } = {}) {
   // background (full bleed)
   if (maskable) {
     // fill whole canvas with bg so the safe-zone crop still shows brand bg
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) setPx(c, x, y, hex('#0e0e10'));
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) setPx(c, x, y, hex('#141215'));
   } else {
-    roundRect(c, size / 100, 0, 0, 0, 0, 100, 100, 20, hex('#0e0e10'));
+    roundRect(c, size / 100, 0, 0, 0, 0, 100, 100, 20, hex('#141215'));
   }
   // dumbbell: for maskable, shrink to ~72% centered (safe zone)
   if (maskable) {

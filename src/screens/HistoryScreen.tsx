@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type WorkoutSet } from '../db/db';
-import { Trash2, ChevronDown, ChevronUp, Calendar, MessageSquare } from 'lucide-react';
+import { db, type WorkoutSet, type SetType } from '../db/db';
+import { Trash2, ChevronDown, ChevronUp, Calendar, MessageSquare, X } from 'lucide-react';
+import WorkoutCalendar from '../components/WorkoutCalendar';
+
+const SET_TYPE_META: Record<Exclude<SetType, 'normal'>, { label: string; color: string }> = {
+  warmup: { label: 'W', color: 'var(--type-warmup)' },
+  drop: { label: 'D', color: 'var(--type-drop)' },
+  failure: { label: 'F', color: 'var(--type-failure)' },
+};
+
+const startOfDay = (ms: number) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
 export default function HistoryScreen() {
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const completedWorkouts = useLiveQuery(
     () => db.workouts.where('status').equals('completed').reverse().sortBy('date')
@@ -58,8 +68,26 @@ export default function HistoryScreen() {
           <p style={{ marginTop: '8px' }}>No workouts logged yet.<br />Complete a session to see it here.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {completedWorkouts.map((workout) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Calendar with workout days highlighted + month/week counts */}
+          <WorkoutCalendar
+            workoutDates={completedWorkouts.map(w => w.date)}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+          />
+
+          {/* Active day filter chip */}
+          {selectedDay !== null && (
+            <button onClick={() => setSelectedDay(null)} style={styles.filterChip}>
+              {new Date(selectedDay).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+              <X size={13} />
+            </button>
+          )}
+
+          {(selectedDay === null
+            ? completedWorkouts
+            : completedWorkouts.filter(w => startOfDay(w.date) === selectedDay)
+          ).map((workout) => {
             const isExpanded = expandedWorkoutId === workout.id;
             const wSets = setsByWorkout[workout.id] || [];
             const workoutNotes = notesByWorkout[workout.id] || {};
@@ -78,7 +106,7 @@ export default function HistoryScreen() {
             return (
               <div key={workout.id} style={{
                 ...styles.workoutCard,
-                borderColor: isExpanded ? 'rgba(93,202,165,0.3)' : 'var(--border-color)',
+                borderColor: isExpanded ? 'var(--accent-border)' : 'var(--border-color)',
               }}>
                 {/* Header */}
                 <div style={styles.cardHeader} onClick={() => setExpandedWorkoutId(isExpanded ? null : workout.id)}>
@@ -134,12 +162,18 @@ export default function HistoryScreen() {
                               )}
                             </div>
                             <div style={styles.setChipsContainer}>
-                              {exSets.map((s, index) => (
-                                <div key={s.id} style={styles.setChip}>
-                                  <span style={styles.setChipNum}>{index + 1}</span>
+                              {exSets.map((s, index) => {
+                                const tMeta = s.setType && s.setType !== 'normal' ? SET_TYPE_META[s.setType] : null;
+                                return (
+                                <div key={s.id} style={{ ...styles.setChip, ...(tMeta ? { borderColor: tMeta.color } : {}) }}>
+                                  <span style={{
+                                    ...styles.setChipNum,
+                                    ...(tMeta ? { color: tMeta.color, backgroundColor: 'transparent' } : {}),
+                                  }}>{tMeta ? tMeta.label : index + 1}</span>
                                   <span style={{ fontSize: '12px' }}>{s.weight}kg × {s.reps}</span>
                                 </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             {note && note.trim() && (
                               <div className="note-badge" style={{ marginTop: '8px' }}>
@@ -163,6 +197,20 @@ export default function HistoryScreen() {
 }
 
 const styles = {
+  filterChip: {
+    alignSelf: 'flex-start' as const,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    color: 'var(--accent)',
+    backgroundColor: 'var(--accent-bg)',
+    border: '1px solid var(--accent-border)',
+  },
   workoutCard: {
     backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',

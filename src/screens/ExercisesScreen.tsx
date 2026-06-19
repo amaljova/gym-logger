@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Exercise } from '../db/db';
 import { uuid } from '../utils/uuid';
+import { BASE_MUSCLE_GROUPS, getMuscleGroups } from '../utils/muscleGroups';
 import { Plus, Search, Edit3, Trash2, X, Save, Dumbbell, Check } from 'lucide-react';
-
-const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
 
 type ModalMode = 'closed' | 'create' | 'edit';
 
@@ -14,10 +13,14 @@ export default function ExercisesScreen() {
   const [modalMode, setModalMode] = useState<ModalMode>('closed');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState('');
-  const [formMuscle, setFormMuscle] = useState(MUSCLE_GROUPS[0]);
+  const [formMuscle, setFormMuscle] = useState(BASE_MUSCLE_GROUPS[0]);
+  const [customMuscle, setCustomMuscle] = useState(false); // typing a new group
 
   const exercises = useLiveQuery(() => db.exercises.toArray()) || [];
   const routines = useLiveQuery(() => db.routines.toArray()) || [];
+
+  // Built-in groups + any custom ones already in the library.
+  const allGroups = getMuscleGroups(exercises);
 
   const filtered = exercises
     .filter(ex => {
@@ -37,7 +40,8 @@ export default function ExercisesScreen() {
   const openCreate = () => {
     setEditingId(null);
     setFormName(search.trim());
-    setFormMuscle(filter !== 'All' ? filter : MUSCLE_GROUPS[0]);
+    setFormMuscle(filter !== 'All' ? filter : BASE_MUSCLE_GROUPS[0]);
+    setCustomMuscle(false);
     setModalMode('create');
   };
 
@@ -45,6 +49,7 @@ export default function ExercisesScreen() {
     setEditingId(ex.id);
     setFormName(ex.name);
     setFormMuscle(ex.muscleGroup);
+    setCustomMuscle(false);
     setModalMode('edit');
   };
 
@@ -52,10 +57,12 @@ export default function ExercisesScreen() {
     setModalMode('closed');
     setEditingId(null);
     setFormName('');
+    setCustomMuscle(false);
   };
 
   const handleSave = async () => {
     const name = formName.trim();
+    const muscleGroup = formMuscle.trim() || 'Other';
     if (!name) return;
     const now = Date.now();
 
@@ -63,12 +70,12 @@ export default function ExercisesScreen() {
       await db.exercises.add({
         id: uuid(),
         name,
-        muscleGroup: formMuscle,
+        muscleGroup,
         isCustom: true,
         updatedAt: now,
       });
     } else if (editingId) {
-      await db.exercises.update(editingId, { name, muscleGroup: formMuscle, updatedAt: now });
+      await db.exercises.update(editingId, { name, muscleGroup, updatedAt: now });
     }
     closeModal();
   };
@@ -119,7 +126,7 @@ export default function ExercisesScreen() {
 
       {/* Muscle filter */}
       <div style={styles.filterRow}>
-        {['All', ...MUSCLE_GROUPS].map(m => (
+        {['All', ...allGroups].map(m => (
           <button
             key={m}
             onClick={() => setFilter(m)}
@@ -204,12 +211,12 @@ export default function ExercisesScreen() {
               <div>
                 <label className="form-label" style={{ marginBottom: '10px' }}>Muscle group</label>
                 <div style={styles.muscleGrid}>
-                  {MUSCLE_GROUPS.map(m => {
-                    const active = formMuscle === m;
+                  {allGroups.map(m => {
+                    const active = !customMuscle && formMuscle === m;
                     return (
                       <button
                         key={m}
-                        onClick={() => setFormMuscle(m)}
+                        onClick={() => { setCustomMuscle(false); setFormMuscle(m); }}
                         style={{
                           ...styles.muscleChoice,
                           backgroundColor: active ? 'var(--accent-bg)' : 'transparent',
@@ -221,13 +228,38 @@ export default function ExercisesScreen() {
                       </button>
                     );
                   })}
+                  {/* Custom group toggle */}
+                  <button
+                    onClick={() => { setCustomMuscle(true); setFormMuscle(''); }}
+                    style={{
+                      ...styles.muscleChoice,
+                      backgroundColor: customMuscle ? 'var(--accent-bg)' : 'transparent',
+                      borderColor: customMuscle ? 'var(--accent)' : 'var(--border-color)',
+                      color: customMuscle ? 'var(--accent)' : 'var(--text-secondary)',
+                      borderStyle: 'dashed',
+                    }}
+                  >
+                    <Plus size={13} /> Custom
+                  </button>
                 </div>
+
+                {customMuscle && (
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="New group name (e.g. Glutes)"
+                    value={formMuscle}
+                    onChange={(e) => setFormMuscle(e.target.value)}
+                    style={{ marginTop: '12px' }}
+                    autoFocus
+                  />
+                )}
               </div>
             </div>
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeModal} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={!formName.trim()} style={{ flex: 2 }}>
+              <button className="btn btn-primary" onClick={handleSave} disabled={!formName.trim() || (customMuscle && !formMuscle.trim())} style={{ flex: 2 }}>
                 <Save size={16} /> {modalMode === 'create' ? 'Create' : 'Save'}
               </button>
             </div>

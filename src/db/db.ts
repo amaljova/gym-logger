@@ -39,6 +39,8 @@ export interface Workout {
   updatedAt: number;
 }
 
+export type SetType = 'normal' | 'warmup' | 'drop' | 'failure';
+
 export interface WorkoutSet {
   id: string; // UUID
   workoutId: string;
@@ -48,6 +50,7 @@ export interface WorkoutSet {
   reps: number;
   completed: boolean;
   completedAt?: number; // timestamp
+  setType?: SetType; // undefined === 'normal' (kept optional for old records)
   updatedAt: number;
 }
 

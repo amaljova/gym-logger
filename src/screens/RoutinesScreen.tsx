@@ -6,6 +6,7 @@ import {
   ClipboardList, Minus, Save, Dumbbell
 } from 'lucide-react';
 import { uuid } from '../utils/uuid';
+import { getMuscleGroups } from '../utils/muscleGroups';
 
 type ModalMode = 'closed' | 'create' | 'edit';
 
@@ -35,7 +36,7 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
 
   const exerciseMap = new Map<string, Exercise>(exercises.map(e => [e.id, e]));
 
-  const muscleGroups = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Custom'];
+  const muscleGroups = ['All', ...getMuscleGroups(exercises)];
 
   // ---------- Handlers ----------
 

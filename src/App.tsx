@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import BottomNav from './components/BottomNav';
 import TopBar from './components/TopBar';
 import Drawer from './components/Drawer';
 import TodayScreen from './screens/TodayScreen';
-import RoutinesScreen from './screens/RoutinesScreen';
-import ExercisesScreen from './screens/ExercisesScreen';
-import HistoryScreen from './screens/HistoryScreen';
-import ProgressScreen from './screens/ProgressScreen';
-import StopwatchScreen from './screens/StopwatchScreen';
-import SettingsScreen from './screens/SettingsScreen';
 import { useTheme } from './hooks/useTheme';
+
+// Code-split the secondary screens so their JS is parsed only when first opened.
+// This keeps initial load (and memory) small — Train is the landing screen and
+// stays eager so there's no flash on startup.
+const RoutinesScreen = lazy(() => import('./screens/RoutinesScreen'));
+const ExercisesScreen = lazy(() => import('./screens/ExercisesScreen'));
+const HistoryScreen = lazy(() => import('./screens/HistoryScreen'));
+const ProgressScreen = lazy(() => import('./screens/ProgressScreen'));
+const StopwatchScreen = lazy(() => import('./screens/StopwatchScreen'));
+const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
 
 export type Tab =
   | 'today'
@@ -19,6 +23,14 @@ export type Tab =
   | 'routines'
   | 'exercises'
   | 'settings';
+
+function ScreenFallback() {
+  return (
+    <div className="screen" style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className="screen-spinner" aria-label="Loading" />
+    </div>
+  );
+}
 
 export default function App() {
   const [currentTab, setTab] = useState<Tab>('today');
@@ -64,7 +76,9 @@ export default function App() {
         onOpenMenu={() => setDrawerOpen(true)}
       />
 
-      {renderScreen()}
+      <Suspense fallback={<ScreenFallback />}>
+        {renderScreen()}
+      </Suspense>
 
       <BottomNav currentTab={currentTab} setTab={go} />
 

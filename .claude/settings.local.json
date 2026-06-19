@@ -15,7 +15,11 @@
       "Bash(sed -i \"s/backgroundColor: '#1a1a20'/backgroundColor: 'var\\(--bg-card\\)'/g\" src/screens/ProgressScreen.tsx)",
       "Bash(sed -i \"s/backgroundColor: '#16161a'/backgroundColor: 'var\\(--bg-card-solid\\)'/g; s/background: 'rgba\\(255,255,255,0.03\\)'/background: 'var\\(--hairline\\)'/g; s/backgroundColor: 'rgba\\(255,255,255,0.02\\)'/backgroundColor: 'var\\(--hairline\\)'/g\" src/screens/SettingsScreen.tsx)",
       "Bash(sed -i \"s/backgroundColor: 'rgba\\(255, 255, 255, 0.02\\)'/backgroundColor: 'var\\(--hairline\\)'/g\" src/screens/RoutinesScreen.tsx)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(sed -i \"s/'rgba\\(93,202,165,0.35\\)'/'var\\(--accent-border\\)'/g; s/'rgba\\(93,202,165,0.22\\)'/'var\\(--accent-border\\)'/g; s/'rgba\\(93,202,165,0.07\\)'/'var\\(--accent-bg\\)'/g; s/'rgba\\(93,202,165,0.04\\)'/'var\\(--accent-bg\\)'/g\" src/screens/TodayScreen.tsx)",
+      "Bash(sed -i \"s/'rgba\\(93,202,165,0.3\\)'/'var\\(--accent-border\\)'/g\" src/screens/HistoryScreen.tsx)",
+      "Bash(sed -i \"s/hex\\('#0e0e10'\\)/hex\\('#141215'\\)/g\" scripts/gen-icons.cjs)",
+      "Bash(node scripts/gen-icons.cjs)"
     ]
   }
 }

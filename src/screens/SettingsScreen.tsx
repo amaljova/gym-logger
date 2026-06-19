@@ -5,7 +5,7 @@ import type { ThemePref } from '../hooks/useTheme';
 import {
   Cloud, CloudOff, RefreshCw, Upload, Download,
   ShieldAlert, HardDrive, Key, CheckCircle, HelpCircle, ChevronDown, ChevronUp, Copy, ExternalLink,
-  Palette, Sun, Moon, Monitor
+  Palette, Sun, Moon, Monitor, Share2
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -83,6 +83,25 @@ export default function SettingsScreen({ pref, setTheme }: SettingsScreenProps) 
     e.target.value = '';
   };
 
+  const handleShareApp = async () => {
+    const shareUrl = window.location.origin + window.location.pathname;
+    const shareData = {
+      title: 'Gym Logger',
+      text: 'Track your workouts offline with Gym Logger — a free, installable gym log.',
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard:\n' + shareUrl);
+      }
+    } catch {
+      /* user cancelled the share sheet — nothing to do */
+    }
+  };
+
   const requestPersistence = async () => {
     if (navigator.storage && navigator.storage.persist) {
       const isPersisted = await navigator.storage.persist();
@@ -127,6 +146,20 @@ export default function SettingsScreen({ pref, setTheme }: SettingsScreenProps) 
               );
             })}
           </div>
+        </div>
+
+        {/* Share */}
+        <div className="card">
+          <div style={styles.cardHeader}>
+            <Share2 size={18} className="text-accent" />
+            <h2 style={styles.cardTitle}>Share this app</h2>
+          </div>
+          <p className="text-secondary" style={{ fontSize: '13px', marginBottom: '14px', lineHeight: '1.4' }}>
+            Send Gym Logger to a training partner. Opens your device's share sheet, or copies the link.
+          </p>
+          <button className="btn btn-secondary w-full" onClick={handleShareApp}>
+            <Share2 size={16} /> Share app
+          </button>
         </div>
 
         {/* Storage Persistence */}
