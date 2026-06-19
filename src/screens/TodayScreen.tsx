@@ -9,6 +9,7 @@ import { uuid } from '../utils/uuid';
 import { getMuscleGroups } from '../utils/muscleGroups';
 import { sortRoutines, isShownOnTrain, mergeVisibleOrder, persistRoutineOrder } from '../utils/routineOrder';
 import SortableList from '../components/SortableList';
+import { useTimer } from '../contexts/TimerContext';
 
 // Visual styling per set type. `normal` shows the plain set number.
 const SET_TYPE_META: Record<Exclude<SetType, 'normal'>, { label: string; color: string; bg: string }> = {
@@ -22,6 +23,7 @@ interface TodayScreenProps {
 }
 
 export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) {
+  const { autoStartOnSet, restartStopwatch } = useTimer();
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -335,6 +337,8 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
       if ('vibrate' in navigator) navigator.vibrate(40);
       setCompletedAnimIds(prev => new Set(prev).add(set.id));
       setTimeout(() => setCompletedAnimIds(prev => { const next = new Set(prev); next.delete(set.id); return next; }), 600);
+      // Optionally start a fresh rest stopwatch for this set.
+      if (autoStartOnSet) restartStopwatch();
     }
   };
 

@@ -87,8 +87,8 @@ export default function App() {
           {renderScreen()}
         </Suspense>
 
-        {/* Floating timer stats over every tab except the Timer screen itself */}
-        {currentTab !== 'stopwatch' && <TimerOverlay onOpen={() => go('stopwatch')} />}
+        {/* Floating timer stats. On the Timer tab it shows the *other* timer. */}
+        <TimerOverlay onOpen={() => go('stopwatch')} onTimerTab={currentTab === 'stopwatch'} />
 
         <BottomNav currentTab={currentTab} setTab={go} />
 

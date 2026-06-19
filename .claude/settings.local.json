@@ -23,7 +23,8 @@
       "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 40; \"EXIT: $LASTEXITCODE\")",
       "Read(//tmp/**)",
       "Bash(taskkill //PID 11728 //F)",
-      "Bash(taskkill //PID 19100 //F)"
+      "Bash(taskkill //PID 19100 //F)",
+      "Bash(taskkill //PID 17468 //F)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw, Flag, Plus, Minus, Timer as TimerIcon, Watch } from 'lucide-react';
+import { Play, Pause, RotateCcw, Flag, Plus, Minus, Timer as TimerIcon, Watch, X } from 'lucide-react';
 import { useTimer, fmtStopwatch, fmtTimer, PRESETS } from '../contexts/TimerContext';
 
 const RADIUS = 120;
@@ -7,17 +7,20 @@ const CIRC = 2 * Math.PI * RADIUS;
 export default function StopwatchScreen() {
   const {
     mode, switchMode,
-    swRunning, elapsed, laps, swProgress, startSw, pauseSw, resetSw, addLap,
-    restRunning, remaining, duration, restFinished, restProgress,
-    startRest, pauseRest, resetRest, adjustDuration, setPreset,
+    swRunning, swActive, elapsed, laps, swProgress, startSw, pauseSw, resetSw, closeSw, addLap,
+    restRunning, restActive, remaining, duration, restFinished, restProgress,
+    startRest, pauseRest, resetRest, closeRest, adjustDuration, setPreset,
+    autoStartOnSet, setAutoStartOnSet,
   } = useTimer();
 
   const isStopwatch = mode === 'stopwatch';
   const running = isStopwatch ? swRunning : restRunning;
+  const active = isStopwatch ? swActive : restActive;
   const progress = isStopwatch ? swProgress : restProgress;
   const dashOffset = CIRC * (1 - progress);
   const sw = fmtStopwatch(elapsed);
   const isTimerDone = !isStopwatch && restFinished;
+  const closeCurrent = () => (isStopwatch ? closeSw() : closeRest());
 
   const onPrimary = () => {
     if (isStopwatch) running ? pauseSw() : startSw();
@@ -133,13 +136,40 @@ export default function StopwatchScreen() {
           {running ? <Pause size={28} /> : <Play size={28} style={{ marginLeft: '3px' }} />}
         </button>
 
-        {/* keep the control row balanced */}
-        <div style={{ width: 72 }} aria-hidden />
+        {/* Close ends the session; only shown once active */}
+        {active ? (
+          <button className="sw-fab sw-fab-secondary" onClick={closeCurrent} aria-label="Close">
+            <X size={24} />
+          </button>
+        ) : (
+          <div style={{ width: 72 }} aria-hidden />
+        )}
       </div>
+
+      {/* Auto-start setting (stopwatch only) */}
+      {isStopwatch && (
+        <div style={styles.settingRow}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 500 }}>Auto-start after each set</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Restart the stopwatch whenever you complete a set.
+            </div>
+          </div>
+          <button
+            className={`toggle-switch${autoStartOnSet ? ' on' : ''}`}
+            onClick={() => setAutoStartOnSet(!autoStartOnSet)}
+            role="switch"
+            aria-checked={autoStartOnSet}
+            aria-label="Auto-start stopwatch after each set"
+          >
+            <span className="knob" />
+          </button>
+        </div>
+      )}
 
       {/* Laps (newest first) */}
       {isStopwatch && laps.length > 0 && (
-        <div style={{ marginTop: '24px' }}>
+        <div style={{ marginTop: '20px' }}>
           {laps.slice().reverse().map((lapTime, ri) => {
             const chronoIndex = laps.length - 1 - ri;
             const prev = chronoIndex > 0 ? laps[chronoIndex - 1] : 0;
@@ -156,3 +186,17 @@ export default function StopwatchScreen() {
     </div>
   );
 }
+
+const styles = {
+  settingRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    marginTop: '24px',
+    padding: '14px 16px',
+    background: 'var(--bg-card-solid)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '14px',
+  },
+};

@@ -57,6 +57,7 @@ interface TimerContextValue {
 
   // Stopwatch (independent)
   swRunning: boolean;
+  swActive: boolean;          // started & not closed (survives pause)
   elapsed: number;
   laps: number[];
   swProgress: number;
@@ -65,9 +66,11 @@ interface TimerContextValue {
   resetSw: () => void;
   closeSw: () => void;
   addLap: () => void;
+  restartStopwatch: () => void;
 
   // Rest timer (independent)
   restRunning: boolean;
+  restActive: boolean;        // started & not closed (survives pause/finish)
   remaining: number;
   duration: number;
   restFinished: boolean;
@@ -79,8 +82,9 @@ interface TimerContextValue {
   adjustDuration: (deltaSec: number) => void;
   setPreset: (sec: number) => void;
 
-  /** Which timer the floating overlay should show (rest takes priority). */
-  overlayTarget: OverlayTarget;
+  // Auto-start the stopwatch when a set is completed (opt-in, off by default).
+  autoStartOnSet: boolean;
+  setAutoStartOnSet: (v: boolean) => void;
 }
 
 const TimerContext = createContext<TimerContextValue | null>(null);
@@ -90,6 +94,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   // ---- Stopwatch state ----
   const [swRunning, setSwRunning] = useState(false);
+  const [swActive, setSwActive] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [laps, setLaps] = useState<number[]>([]);
   const swAnchor = useRef(0);          // performance.now() - elapsed
@@ -98,9 +103,19 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   // ---- Rest timer state ----
   const [restRunning, setRestRunning] = useState(false);
+  const [restActive, setRestActive] = useState(false);
   const [duration, setDuration] = useState(60_000);
   const [remaining, setRemaining] = useState(60_000);
   const [restFinished, setRestFinished] = useState(false);
+
+  // ---- Settings ----
+  const [autoStartOnSet, setAutoStartOnSetState] = useState<boolean>(
+    () => localStorage.getItem('gym_auto_sw') === '1'
+  );
+  const setAutoStartOnSet = useCallback((v: boolean) => {
+    setAutoStartOnSetState(v);
+    localStorage.setItem('gym_auto_sw', v ? '1' : '0');
+  }, []);
   const durationRef = useRef(60_000);
   const remainingRef = useRef(60_000);
   const restEnd = useRef(0);           // absolute performance.now() target
@@ -155,23 +170,37 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   }, [swRunning, restRunning]);
 
   // ---- Stopwatch controls ----
-  const startSw = useCallback(() => { swAnchor.current = performance.now() - elapsedRef.current; setSwRunning(true); }, []);
+  const startSw = useCallback(() => {
+    swAnchor.current = performance.now() - elapsedRef.current;
+    setSwActive(true);
+    setSwRunning(true);
+  }, []);
   const pauseSw = useCallback(() => setSwRunning(false), []);
-  // Reset keeps it running (restarts from zero) so it stays visible.
+  // Reset keeps the session active (restarts from zero).
   const resetSw = useCallback(() => {
     elapsedRef.current = 0;
     setElapsed(0);
     setLaps([]);
     swAnchor.current = performance.now();
   }, []);
-  // Close fully stops & clears (overlay disappears).
+  // Close fully stops, clears, and ends the session (float disappears).
   const closeSw = useCallback(() => {
     setSwRunning(false);
+    setSwActive(false);
     elapsedRef.current = 0;
     setElapsed(0);
     setLaps([]);
   }, []);
   const addLap = useCallback(() => setLaps(p => [...p, elapsedRef.current]), []);
+  // Used by "auto-start on set complete": fresh count from zero, running.
+  const restartStopwatch = useCallback(() => {
+    elapsedRef.current = 0;
+    setElapsed(0);
+    setLaps([]);
+    swAnchor.current = performance.now();
+    setSwActive(true);
+    setSwRunning(true);
+  }, []);
 
   // ---- Rest controls ----
   const startRest = useCallback(() => {
@@ -180,6 +209,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setRemaining(base);
     restEnd.current = performance.now() + base;
     setRestFinished(false);
+    setRestActive(true);
     setRestRunning(true);
   }, []);
   const pauseRest = useCallback(() => setRestRunning(false), []);
@@ -195,6 +225,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   }, []);
   const closeRest = useCallback(() => {
     setRestRunning(false);
+    setRestActive(false);
     setRestFinished(false);
     remainingRef.current = durationRef.current;
     setRemaining(durationRef.current);
@@ -224,16 +255,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const swProgress = (elapsed % 60_000) / 60_000;
   const restProgress = duration > 0 ? remaining / duration : 0;
 
-  // Rest timer takes priority in the overlay (it's the time-critical one).
-  const overlayTarget: OverlayTarget =
-    restRunning || restFinished ? 'timer' : swRunning ? 'stopwatch' : null;
-
   const value: TimerContextValue = {
     mode, switchMode,
-    swRunning, elapsed, laps, swProgress, startSw, pauseSw, resetSw, closeSw, addLap,
-    restRunning, remaining, duration, restFinished, restProgress,
+    swRunning, swActive, elapsed, laps, swProgress, startSw, pauseSw, resetSw, closeSw, addLap, restartStopwatch,
+    restRunning, restActive, remaining, duration, restFinished, restProgress,
     startRest, pauseRest, resetRest, closeRest, adjustDuration, setPreset,
-    overlayTarget,
+    autoStartOnSet, setAutoStartOnSet,
   };
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;

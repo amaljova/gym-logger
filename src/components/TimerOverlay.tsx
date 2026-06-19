@@ -2,18 +2,26 @@ import { Pause, Play, X, RotateCcw, Watch, Timer as TimerIcon } from 'lucide-rea
 import { useTimer, fmtStopwatch, fmtTimer } from '../contexts/TimerContext';
 
 interface TimerOverlayProps {
-  onOpen: () => void; // jump to the Timer tab
+  onOpen: () => void;       // jump to the Timer tab
+  onTimerTab: boolean;      // is the Timer screen currently shown?
 }
 
 /**
  * Floating control pill shown over every screen while a stopwatch or rest timer
- * is active. Shows the rest timer when it's running/finished (time-critical),
- * otherwise the stopwatch. Provides reset / pause-resume / close inline so the
- * user never has to leave their current screen.
+ * is active. It persists through pause/finish and only disappears when the user
+ * taps Close. While on the Timer tab, it shows the *other* timer (the one not
+ * being viewed full-screen) so both are always reachable.
  */
-export default function TimerOverlay({ onOpen }: TimerOverlayProps) {
+export default function TimerOverlay({ onOpen, onTimerTab }: TimerOverlayProps) {
   const t = useTimer();
-  const target = t.overlayTarget;
+
+  // The timer shown full-screen on the Timer tab shouldn't also float.
+  const hidden = onTimerTab ? (t.mode === 'stopwatch' ? 'stopwatch' : 'timer') : null;
+
+  // Rest timer takes priority; otherwise show the stopwatch.
+  let target: 'stopwatch' | 'timer' | null = null;
+  if (t.restActive && hidden !== 'timer') target = 'timer';
+  else if (t.swActive && hidden !== 'stopwatch') target = 'stopwatch';
   if (!target) return null;
 
   const isStopwatch = target === 'stopwatch';
