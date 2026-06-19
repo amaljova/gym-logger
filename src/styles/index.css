@@ -240,23 +240,40 @@ input, textarea, select {
 }
 
 .btn-primary {
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--on-accent);
   font-weight: 600;
-  box-shadow: 0 2px 12px var(--accent-glow);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 20px var(--accent-glow);
-  filter: brightness(1.05);
+  background: var(--accent-hover);
+}
+
+/* Solid amber / green action buttons — dark text for contrast on light hues */
+.btn-amber {
+  background: var(--amber);
+  color: #1a1208;
+  font-weight: 600;
+}
+
+.btn-amber:hover:not(:disabled) {
+  filter: brightness(1.04);
+}
+
+.btn-green {
+  background: var(--green);
+  color: #1a1208;
+  font-weight: 600;
+}
+
+.btn-green:hover:not(:disabled) {
+  filter: brightness(1.04);
 }
 
 .btn-secondary {
-  background-color: var(--glass-bg);
+  background-color: var(--bg-card-solid);
   color: var(--text-primary);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -463,6 +480,33 @@ input, textarea, select {
 .text-muted { color: var(--text-muted); }
 
 .w-full { width: 100%; }
+
+/* ===================== Bento grid ===================== */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  grid-auto-rows: minmax(0, auto);
+}
+
+.bento-tile {
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-tile:hover {
+  border-color: var(--border-focus);
+}
+
+.col-span-2 { grid-column: span 2; }
+.row-span-2 { grid-row: span 2; }
 
 .empty-state {
   display: flex;
@@ -794,6 +838,83 @@ input, textarea, select {
 .sw-lap-row:first-child { border-top: 1px solid var(--hairline); }
 .sw-lap-num { color: var(--text-secondary); font-weight: 500; }
 .sw-lap-time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ===================== Floating timer overlay ===================== */
+.timer-overlay {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 95;
+  width: calc(100% - 32px);
+  max-width: 448px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--accent-border);
+  box-shadow: var(--shadow-lg);
+  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.timer-overlay-done {
+  border-color: var(--accent);
+  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1), pulse 1s ease-in-out infinite;
+}
+.timer-overlay-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  text-align: left;
+  min-width: 0;
+}
+.timer-overlay-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.timer-overlay-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: 600;
+}
+.timer-overlay-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.timer-overlay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.timer-overlay-btn:active { transform: scale(0.92); }
 
 /* ===================== Suspense spinner ===================== */
 .screen-spinner {

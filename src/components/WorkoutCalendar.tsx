@@ -68,7 +68,7 @@ export default function WorkoutCalendar({ workoutDates, selectedDay, onSelectDay
   };
 
   return (
-    <div className="card" style={{ padding: '14px 14px 16px' }}>
+    <div className="card" style={{ padding: '16px 18px 18px', maxWidth: '340px', width: '100%', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <button className="icon-btn" style={{ width: 36, height: 36 }} onClick={() => changeMonth(-1)} aria-label="Previous month">

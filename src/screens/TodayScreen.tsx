@@ -383,46 +383,66 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
   return (
     <div className="screen">
       {!activeWorkout ? (
-        /* ── SETUP SCREEN ── */
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div className="screen-header">
-            <h1 className="screen-title">Train</h1>
-            <p className="screen-subtitle">Pick a routine or start freestyle</p>
-          </div>
+        /* ── SETUP SCREEN (bento dashboard) ── */
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Bento dashboard */}
+          <div className="bento-grid">
+            {/* Greeting tile */}
+            <div className="bento-tile col-span-2" style={styles.greetTile}>
+              <Dumbbell size={22} style={{ color: 'var(--accent)' }} />
+              <h1 style={styles.greetTitle}>Ready to train?</h1>
+              <p style={styles.greetSub}>Pick a routine or start freestyle.</p>
+            </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, justifyContent: 'center' }}>
-            <button className="btn btn-primary w-full" onClick={handleStartFreestyle} style={{ height: '56px', fontSize: '16px' }}>
+            {/* Quick stat tiles */}
+            <div className="bento-tile" style={{ ...styles.statTile, background: 'var(--accent-bg)', borderColor: 'var(--accent-border)' }}>
+              <span style={{ ...styles.statTileVal, color: 'var(--accent)' }}>{routines.length}</span>
+              <span style={styles.statTileLbl}>Routines</span>
+            </div>
+            <div className="bento-tile" style={{ ...styles.statTile, background: 'var(--type-warmup-bg)', borderColor: 'var(--amber)' }}>
+              <span style={{ ...styles.statTileVal, color: 'var(--amber)' }}>{exercises.length}</span>
+              <span style={styles.statTileLbl}>Exercises</span>
+            </div>
+
+            {/* Freestyle CTA — solid coral */}
+            <button className="btn btn-primary col-span-2" onClick={handleStartFreestyle} style={{ height: '56px', fontSize: '16px', borderRadius: '16px' }}>
               <Play size={20} />
               Start freestyle session
             </button>
+          </div>
 
-            <div style={{ margin: '8px 0' }}>
+          {/* Routines */}
+          <div style={{ marginTop: '22px' }}>
+            <div style={styles.routineHeaderRow}>
               <h2 style={styles.sectionLabel}>Routines</h2>
-              {routines.length === 0 ? (
-                <div className="card text-center" style={{ padding: '24px' }}>
-                  <p className="text-secondary">No routines set up yet.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {routines.map(routine => (
-                    <div key={routine.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-                      <div>
-                        <h3 style={{ fontSize: '15px', fontWeight: '500' }}>{routine.name}</h3>
-                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{routine.dayLabel}</p>
-                      </div>
-                      <button className="btn btn-secondary" onClick={() => handleStartRoutine(routine)} style={{ minHeight: '38px', padding: '0 14px', fontSize: '14px' }}>
-                        Start
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
               {onNavigateToRoutines && (
                 <button onClick={onNavigateToRoutines} style={styles.linkBtn}>
                   Manage routines →
                 </button>
               )}
             </div>
+            {routines.length === 0 ? (
+              <div className="bento-tile text-center" style={{ padding: '24px' }}>
+                <p className="text-secondary">No routines set up yet.</p>
+              </div>
+            ) : (
+              <div className="bento-grid">
+                {routines.map((routine, i) => {
+                  const accentVar = i % 3 === 0 ? 'var(--accent)' : i % 3 === 1 ? 'var(--amber)' : 'var(--green)';
+                  return (
+                    <div key={routine.id} className="bento-tile col-span-2" style={{ ...styles.routineTile, borderColor: accentVar }}>
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '600' }}>{routine.name}</h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{routine.dayLabel}</p>
+                      </div>
+                      <button className="btn btn-secondary" onClick={() => handleStartRoutine(routine)} style={{ minHeight: '40px', padding: '0 16px', fontSize: '14px', flexShrink: 0 }}>
+                        <Play size={15} /> Start
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -753,12 +773,59 @@ const styles = {
     color: 'var(--accent)',
     fontSize: '13px',
     cursor: 'pointer',
-    padding: '10px 0 0',
+    padding: '0',
     fontFamily: 'var(--font-sans)',
     fontWeight: '500',
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
+  },
+  greetTile: {
+    gap: '8px',
+    padding: '20px',
+  },
+  greetTitle: {
+    fontSize: '24px',
+    fontWeight: '700',
+    letterSpacing: '-0.4px',
+    color: 'var(--text-primary)',
+    marginTop: '4px',
+  },
+  greetSub: {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+  },
+  statTile: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: '2px',
+    minHeight: '88px',
+  },
+  statTileVal: {
+    fontSize: '32px',
+    fontWeight: '700',
+    lineHeight: '1',
+    letterSpacing: '-0.5px',
+  },
+  statTileLbl: {
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.6px',
+    fontWeight: '500',
+  },
+  routineHeaderRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '10px',
+  },
+  routineTile: {
+    flexDirection: 'row' as const,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    borderLeftWidth: '3px',
   },
   statsStrip: {
     display: 'flex',

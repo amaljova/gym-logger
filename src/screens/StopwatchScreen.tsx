@@ -1,170 +1,17 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Flag, Plus, Minus, Timer as TimerIcon, Watch } from 'lucide-react';
-
-type Mode = 'stopwatch' | 'timer';
-
-// ---- time formatting helpers ----
-function fmtStopwatch(ms: number) {
-  const totalCs = Math.floor(ms / 10);
-  const cs = totalCs % 100;
-  const totalSec = Math.floor(totalCs / 100);
-  const sec = totalSec % 60;
-  const min = Math.floor(totalSec / 60);
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return { main: `${pad(min)}:${pad(sec)}`, cs: pad(cs) };
-}
-
-function fmtTimer(ms: number) {
-  const totalSec = Math.ceil(ms / 1000);
-  const sec = totalSec % 60;
-  const min = Math.floor(totalSec / 60);
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(min)}:${pad(sec)}`;
-}
-
-// short feedback when a rest timer finishes
-function finishFeedback() {
-  if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-  try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
-    const beep = (freq: number, start: number, dur: number) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.001, ctx.currentTime + start);
-      gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur);
-    };
-    beep(880, 0, 0.18);
-    beep(1175, 0.22, 0.25);
-    setTimeout(() => ctx.close(), 800);
-  } catch {
-    /* audio not available — vibration/visual is enough */
-  }
-}
+import { useTimer, fmtStopwatch, fmtTimer, PRESETS } from '../contexts/TimerContext';
 
 const RADIUS = 120;
 const CIRC = 2 * Math.PI * RADIUS;
-const PRESETS = [30, 60, 90, 120, 180]; // seconds
 
 export default function StopwatchScreen() {
-  const [mode, setMode] = useState<Mode>('stopwatch');
-  const [running, setRunning] = useState(false);
+  const {
+    mode, running, elapsed, laps, duration, remaining, isTimerDone, progress,
+    start, pause, reset, addLap, adjustDuration, setPreset, switchMode,
+  } = useTimer();
 
-  // stopwatch
-  const [elapsed, setElapsed] = useState(0);
-  const [laps, setLaps] = useState<number[]>([]);
-  const swAnchor = useRef(0); // performance.now() - elapsed
-
-  // timer
-  const [duration, setDuration] = useState(60_000);
-  const [remaining, setRemaining] = useState(60_000);
-  const timerEnd = useRef(0); // absolute performance.now() target
-
-  const rafRef = useRef<number | null>(null);
-
-  // ---- animation loop ----
-  const tick = useCallback(() => {
-    const now = performance.now();
-    if (mode === 'stopwatch') {
-      setElapsed(now - swAnchor.current);
-    } else {
-      const rem = timerEnd.current - now;
-      if (rem <= 0) {
-        setRemaining(0);
-        setRunning(false);
-        finishFeedback();
-        return;
-      }
-      setRemaining(rem);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [mode]);
-
-  useEffect(() => {
-    if (running) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [running, tick]);
-
-  // Recompute immediately when returning to the app (rAF is paused while hidden)
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState !== 'visible' || !running) return;
-      const now = performance.now();
-      if (mode === 'stopwatch') setElapsed(now - swAnchor.current);
-      else {
-        const rem = timerEnd.current - now;
-        if (rem <= 0) { setRemaining(0); setRunning(false); }
-        else setRemaining(rem);
-      }
-    };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, [running, mode]);
-
-  // ---- controls ----
-  const start = () => {
-    const now = performance.now();
-    if (mode === 'stopwatch') {
-      swAnchor.current = now - elapsed;
-    } else {
-      if (remaining <= 0) setRemaining(duration);
-      timerEnd.current = now + (remaining > 0 ? remaining : duration);
-    }
-    setRunning(true);
-  };
-  const pause = () => setRunning(false);
-
-  const reset = () => {
-    setRunning(false);
-    if (mode === 'stopwatch') {
-      setElapsed(0);
-      setLaps([]);
-    } else {
-      setRemaining(duration);
-    }
-  };
-
-  const addLap = () => setLaps(prev => [...prev, elapsed]);
-
-  const adjustDuration = (deltaSec: number) => {
-    if (running) return;
-    const next = Math.max(5_000, Math.min(59 * 60_000, duration + deltaSec * 1000));
-    setDuration(next);
-    setRemaining(next);
-  };
-
-  const setPreset = (sec: number) => {
-    if (running) return;
-    setDuration(sec * 1000);
-    setRemaining(sec * 1000);
-  };
-
-  const switchMode = (m: Mode) => {
-    if (m === mode) return;
-    setRunning(false);
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    setMode(m);
-  };
-
-  // ---- derived display ----
-  const progress = mode === 'stopwatch'
-    ? (elapsed % 60_000) / 60_000
-    : duration > 0 ? remaining / duration : 0;
   const dashOffset = CIRC * (1 - progress);
-
   const sw = fmtStopwatch(elapsed);
-  const isTimerDone = mode === 'timer' && remaining <= 0;
 
   return (
     <div className="screen" style={{ paddingBottom: '24px' }}>
@@ -286,7 +133,7 @@ export default function StopwatchScreen() {
       {mode === 'stopwatch' && laps.length > 0 && (
         <div style={{ marginTop: '24px' }}>
           {laps.slice().reverse().map((lapTime, ri) => {
-            const chronoIndex = laps.length - 1 - ri; // 0-based position in time order
+            const chronoIndex = laps.length - 1 - ri;
             const prev = chronoIndex > 0 ? laps[chronoIndex - 1] : 0;
             const f = fmtStopwatch(lapTime - prev);
             return (

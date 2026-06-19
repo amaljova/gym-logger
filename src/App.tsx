@@ -2,8 +2,11 @@ import { useState, lazy, Suspense } from 'react';
 import BottomNav from './components/BottomNav';
 import TopBar from './components/TopBar';
 import Drawer from './components/Drawer';
+import TimerOverlay from './components/TimerOverlay';
 import TodayScreen from './screens/TodayScreen';
 import { useTheme } from './hooks/useTheme';
+import { TimerProvider } from './contexts/TimerContext';
+import { useUnsavedWorkoutWarning } from './hooks/useUnsavedWorkoutWarning';
 
 // Code-split the secondary screens so their JS is parsed only when first opened.
 // This keeps initial load (and memory) small — Train is the landing screen and
@@ -37,6 +40,9 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { pref, resolved, setTheme } = useTheme();
 
+  // Warn before closing/reloading while a workout is unsaved (still active).
+  useUnsavedWorkoutWarning();
+
   // Navigate and always close the drawer.
   const go = (tab: Tab) => {
     setTab(tab);
@@ -68,29 +74,34 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      <TopBar
-        resolved={resolved}
-        pref={pref}
-        onToggleTheme={toggleTheme}
-        onOpenMenu={() => setDrawerOpen(true)}
-      />
-
-      <Suspense fallback={<ScreenFallback />}>
-        {renderScreen()}
-      </Suspense>
-
-      <BottomNav currentTab={currentTab} setTab={go} />
-
-      {drawerOpen && (
-        <Drawer
-          currentTab={currentTab}
-          go={go}
-          onClose={() => setDrawerOpen(false)}
+    <TimerProvider>
+      <div className="app-container">
+        <TopBar
+          resolved={resolved}
           pref={pref}
-          setTheme={setTheme}
+          onToggleTheme={toggleTheme}
+          onOpenMenu={() => setDrawerOpen(true)}
         />
-      )}
-    </div>
+
+        <Suspense fallback={<ScreenFallback />}>
+          {renderScreen()}
+        </Suspense>
+
+        {/* Floating timer stats over every tab except the Timer screen itself */}
+        {currentTab !== 'stopwatch' && <TimerOverlay onOpen={() => go('stopwatch')} />}
+
+        <BottomNav currentTab={currentTab} setTab={go} />
+
+        {drawerOpen && (
+          <Drawer
+            currentTab={currentTab}
+            go={go}
+            onClose={() => setDrawerOpen(false)}
+            pref={pref}
+            setTheme={setTheme}
+          />
+        )}
+      </div>
+    </TimerProvider>
   );
 }

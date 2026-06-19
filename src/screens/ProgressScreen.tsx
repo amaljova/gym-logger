@@ -199,26 +199,25 @@ export default function ProgressScreen() {
             </button>
           </div>
 
-          {/* Personal Record Cards */}
-          <div style={styles.prContainer}>
-            <div className="card" style={{ flex: 1, margin: 0, padding: '12px', textAlign: 'center' }}>
+          {/* Personal Record Cards + Chart — bento grid */}
+          <div className="bento-grid">
+            <div className="bento-tile" style={{ background: 'var(--accent-bg)', borderColor: 'var(--accent-border)', textAlign: 'center', alignItems: 'center' }}>
               <div style={styles.prHeader}>
-                <Award size={14} className="text-accent" />
+                <Award size={14} style={{ color: 'var(--accent)' }} />
                 <span style={styles.prLabel}>All-Time 1RM</span>
               </div>
-              <span style={styles.prValue}>{personalRecords.max1RM} kg</span>
+              <span style={{ ...styles.prValue, color: 'var(--accent)' }}>{personalRecords.max1RM} kg</span>
             </div>
-            <div className="card" style={{ flex: 1, margin: 0, padding: '12px', textAlign: 'center' }}>
+            <div className="bento-tile" style={{ background: 'var(--type-drop-bg)', borderColor: 'var(--green)', textAlign: 'center', alignItems: 'center' }}>
               <div style={styles.prHeader}>
-                <BarChart2 size={14} className="text-accent" />
+                <BarChart2 size={14} style={{ color: 'var(--green)' }} />
                 <span style={styles.prLabel}>All-Time Top Set</span>
               </div>
-              <span style={styles.prValue}>{personalRecords.maxTopWeight} kg</span>
+              <span style={{ ...styles.prValue, color: 'var(--green)' }}>{personalRecords.maxTopWeight} kg</span>
             </div>
-          </div>
 
           {/* SVG Chart */}
-          <div className="card" style={{ padding: '12px', overflow: 'hidden' }}>
+          <div className="bento-tile col-span-2" style={{ padding: '12px', overflow: 'hidden' }}>
             {chartData.length < 2 ? (
               <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>
                 Need at least 2 distinct workout sessions for this exercise to draw chart lines.
@@ -343,6 +342,7 @@ export default function ProgressScreen() {
                 </svg>
               </div>
             )}
+          </div>
           </div>
         </div>
       )}

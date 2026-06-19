@@ -19,7 +19,10 @@
       "Bash(sed -i \"s/'rgba\\(93,202,165,0.35\\)'/'var\\(--accent-border\\)'/g; s/'rgba\\(93,202,165,0.22\\)'/'var\\(--accent-border\\)'/g; s/'rgba\\(93,202,165,0.07\\)'/'var\\(--accent-bg\\)'/g; s/'rgba\\(93,202,165,0.04\\)'/'var\\(--accent-bg\\)'/g\" src/screens/TodayScreen.tsx)",
       "Bash(sed -i \"s/'rgba\\(93,202,165,0.3\\)'/'var\\(--accent-border\\)'/g\" src/screens/HistoryScreen.tsx)",
       "Bash(sed -i \"s/hex\\('#0e0e10'\\)/hex\\('#141215'\\)/g\" scripts/gen-icons.cjs)",
-      "Bash(node scripts/gen-icons.cjs)"
+      "Bash(node scripts/gen-icons.cjs)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 40; \"EXIT: $LASTEXITCODE\")",
+      "Read(//tmp/**)",
+      "Bash(taskkill //PID 11728 //F)"
     ]
   }
 }
