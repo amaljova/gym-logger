@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useGoogleDrive } from '../hooks/useGoogleDrive';
 import { exportDatabaseToJson, importDatabaseFromJson } from '../db/db';
+import type { ThemePref } from '../hooks/useTheme';
 import {
   Cloud, CloudOff, RefreshCw, Upload, Download,
-  ShieldAlert, HardDrive, Key, CheckCircle, HelpCircle, ChevronDown, ChevronUp, Copy, ExternalLink
+  ShieldAlert, HardDrive, Key, CheckCircle, HelpCircle, ChevronDown, ChevronUp, Copy, ExternalLink,
+  Palette, Sun, Moon, Monitor
 } from 'lucide-react';
 
-export default function SettingsScreen() {
+interface SettingsScreenProps {
+  pref: ThemePref;
+  setTheme: (p: ThemePref) => void;
+}
+
+export default function SettingsScreen({ pref, setTheme }: SettingsScreenProps) {
   const gdrive = useGoogleDrive();
   const [showClientIdHelp, setShowClientIdHelp] = useState(false);
+
+  const themeOptions: { id: ThemePref; label: string; icon: typeof Sun }[] = [
+    { id: 'light', label: 'Light', icon: Sun },
+    { id: 'dark', label: 'Dark', icon: Moon },
+    { id: 'system', label: 'System', icon: Monitor },
+  ];
 
   // Values that must be whitelisted in Google Cloud Console. On a GitHub project
   // page these differ: the JS origin has no path, the redirect URI includes it
@@ -90,7 +103,32 @@ export default function SettingsScreen() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+
+        {/* Appearance / Theme */}
+        <div className="card">
+          <div style={styles.cardHeader}>
+            <Palette size={18} className="text-accent" />
+            <h2 style={styles.cardTitle}>Appearance</h2>
+          </div>
+          <p className="text-secondary" style={{ fontSize: '13px', marginBottom: '14px', lineHeight: '1.4' }}>
+            Choose a theme. "System" follows your device's light/dark setting automatically.
+          </p>
+          <div className="segmented">
+            {themeOptions.map(opt => {
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.id}
+                  className={pref === opt.id ? 'active' : ''}
+                  onClick={() => setTheme(opt.id)}
+                >
+                  <Icon size={15} /> {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Storage Persistence */}
         <div className="card">
           <div style={styles.cardHeader}>
@@ -299,7 +337,7 @@ const styles = {
   },
   syncAlert: {
     fontSize: '12px',
-    backgroundColor: '#16161a',
+    backgroundColor: 'var(--bg-card-solid)',
     border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '10px',
@@ -318,7 +356,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--hairline)',
     border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '10px 12px',
@@ -331,7 +369,7 @@ const styles = {
   helpBox: {
     marginTop: '10px',
     padding: '14px 14px 14px 0',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: 'var(--hairline)',
     border: '1px solid var(--border-color)',
     borderRadius: '10px',
   },

@@ -1,23 +1,25 @@
-import { Dumbbell, History, TrendingUp, Settings, ClipboardList } from 'lucide-react';
+import { Dumbbell, History, TrendingUp, Timer } from 'lucide-react';
+import type { Tab } from '../App';
 
 interface BottomNavProps {
-  currentTab: 'today' | 'routines' | 'history' | 'progress' | 'settings';
-  setTab: (tab: 'today' | 'routines' | 'history' | 'progress' | 'settings') => void;
+  currentTab: Tab;
+  setTab: (tab: Tab) => void;
 }
 
-export default function BottomNav({ currentTab, setTab }: BottomNavProps) {
-  const tabs = [
-    { id: 'today', label: 'Train', icon: Dumbbell },
-    { id: 'routines', label: 'Routines', icon: ClipboardList },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ] as const;
+// Only the primary destinations live in the bottom bar. Routines, Exercises
+// and Settings are reachable from the hamburger menu (Drawer).
+const TABS: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
+  { id: 'today', label: 'Train', icon: Dumbbell },
+  { id: 'history', label: 'History', icon: History },
+  { id: 'progress', label: 'Progress', icon: TrendingUp },
+  { id: 'stopwatch', label: 'Timer', icon: Timer },
+];
 
+export default function BottomNav({ currentTab, setTab }: BottomNavProps) {
   return (
     <nav style={styles.nav}>
       <div style={styles.navInner}>
-        {tabs.map((tab) => {
+        {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = currentTab === tab.id;
           return (
@@ -29,15 +31,16 @@ export default function BottomNav({ currentTab, setTab }: BottomNavProps) {
                 color: isActive ? 'var(--accent)' : 'var(--text-muted)',
               }}
               aria-label={tab.label}
+              aria-current={isActive ? 'page' : undefined}
             >
               <div style={styles.iconWrap}>
-                <Icon size={20} style={isActive ? styles.activeIcon : {}} />
+                <Icon size={22} style={isActive ? styles.activeIcon : undefined} />
                 {isActive && <div style={styles.activeGlow} />}
               </div>
               <span style={{
                 ...styles.tabLabel,
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontWeight: isActive ? '600' : '400',
+                fontWeight: isActive ? 600 : 400,
               }}>
                 {tab.label}
               </span>
@@ -59,19 +62,16 @@ const styles = {
     width: '100%',
     maxWidth: '480px',
     zIndex: 90,
-    padding: '0 8px 0',
   },
   navInner: {
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    height: '68px',
-    backgroundColor: 'rgba(10, 10, 12, 0.85)',
+    height: '64px',
+    backgroundColor: 'var(--bg-nav)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-    borderRadius: '0',
-    // Extend background into the iOS home-indicator area
+    borderTop: '1px solid var(--hairline)',
     paddingBottom: 'env(safe-area-inset-bottom)',
     boxSizing: 'content-box' as const,
   },
@@ -82,9 +82,9 @@ const styles = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '2px',
+    gap: '3px',
     cursor: 'pointer',
-    width: '20%',
+    width: '25%',
     height: '100%',
     padding: '6px 0 8px',
     position: 'relative' as const,
@@ -102,14 +102,15 @@ const styles = {
     transition: 'color 0.2s ease',
   },
   activeIcon: {
-    filter: 'drop-shadow(0 0 6px rgba(93, 202, 165, 0.5))',
+    filter: 'drop-shadow(0 0 6px var(--accent-glow))',
   },
   activeGlow: {
     position: 'absolute' as const,
-    width: '28px',
-    height: '28px',
+    width: '30px',
+    height: '30px',
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(93, 202, 165, 0.15) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, var(--accent-glow) 0%, transparent 70%)',
+    opacity: 0.5,
     pointerEvents: 'none' as const,
   },
   activeDot: {

@@ -607,7 +607,7 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
 
             {/* Workout Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '14px' }}>
-              <button className="btn btn-secondary w-full" onClick={() => setShowAddModal(true)} style={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)' }}>
+              <button className="btn btn-secondary w-full" onClick={() => setShowAddModal(true)} style={{ borderStyle: 'dashed', borderColor: 'var(--border-focus)' }}>
                 <PlusCircle size={17} />
                 Add exercise
               </button>
@@ -721,7 +721,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(16,16,20,0.8)',
+    backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     borderRadius: '14px',
     padding: '14px 16px',
@@ -749,7 +749,7 @@ const styles = {
     marginTop: '2px',
   },
   exerciseCard: {
-    backgroundColor: 'rgba(16,16,20,0.7)',
+    backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     borderRadius: '14px',
     overflow: 'hidden' as const,
@@ -823,7 +823,7 @@ const styles = {
   setInput: {
     width: '44px',
     height: '34px',
-    backgroundColor: 'rgba(20,20,26,0.8)',
+    backgroundColor: 'var(--bg-input)',
     border: '1px solid var(--border-color)',
     borderRadius: '6px',
     color: 'var(--text-primary)',
@@ -918,7 +918,7 @@ const styles = {
   },
   modalExRow: {
     padding: '13px 14px',
-    backgroundColor: 'rgba(16,16,20,0.6)',
+    backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     borderRadius: '10px',
     cursor: 'pointer',

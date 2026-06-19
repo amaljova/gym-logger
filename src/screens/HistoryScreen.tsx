@@ -164,7 +164,7 @@ export default function HistoryScreen() {
 
 const styles = {
   workoutCard: {
-    backgroundColor: 'rgba(16,16,20,0.7)',
+    backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     borderRadius: '14px',
     overflow: 'hidden' as const,
@@ -201,14 +201,14 @@ const styles = {
     fontSize: '12px',
     color: 'var(--text-secondary)',
     marginBottom: '14px',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'var(--hairline)',
     padding: '7px 10px',
     borderRadius: '7px',
     border: '1px solid var(--border-color)',
   },
   exerciseDetailRow: {
     paddingBottom: '12px',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    borderBottom: '1px solid var(--hairline)',
   },
   setChipsContainer: {
     display: 'flex',
@@ -219,7 +219,7 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '5px',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'var(--hairline)',
     border: '1px solid var(--border-color)',
     borderRadius: '7px',
     padding: '4px 9px',

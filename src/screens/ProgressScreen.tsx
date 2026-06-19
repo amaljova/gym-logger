@@ -353,7 +353,7 @@ export default function ProgressScreen() {
 const styles = {
   tabToggle: {
     display: 'flex',
-    backgroundColor: '#1a1a20',
+    backgroundColor: 'var(--bg-card)',
     borderRadius: '8px',
     padding: '3px',
     border: '1px solid var(--border-color)',

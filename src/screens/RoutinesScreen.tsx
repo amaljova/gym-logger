@@ -17,7 +17,11 @@ interface RoutineFormState {
 
 const emptyForm: RoutineFormState = { name: '', dayLabel: '', exercises: [] };
 
-export default function RoutinesScreen() {
+interface RoutinesScreenProps {
+  onManageExercises?: () => void;
+}
+
+export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProps) {
   const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<ModalMode>('closed');
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
@@ -135,7 +139,7 @@ export default function RoutinesScreen() {
 
   return (
     <div className="screen" style={{ paddingBottom: '24px' }}>
-      <div className="screen-header">
+      <div className="screen-header" style={{ marginBottom: '18px' }}>
         <h1 className="screen-title">Routines</h1>
         <p className="screen-subtitle">build and manage your workout templates</p>
       </div>
@@ -144,11 +148,22 @@ export default function RoutinesScreen() {
       <button
         className="btn btn-primary w-full"
         onClick={openCreate}
-        style={{ marginBottom: '20px', height: '52px', fontSize: '16px' }}
+        style={{ marginBottom: '10px', height: '50px', fontSize: '15px' }}
       >
         <Plus size={20} />
         Create new routine
       </button>
+
+      {onManageExercises && (
+        <button
+          className="btn btn-secondary w-full"
+          onClick={onManageExercises}
+          style={{ marginBottom: '20px', height: '44px', minHeight: '44px', fontSize: '14px' }}
+        >
+          <Dumbbell size={16} />
+          Manage exercise library
+        </button>
+      )}
 
       {/* Routine Cards List */}
       {routines.length === 0 ? (
@@ -540,7 +555,7 @@ const cardStyles = {
     alignItems: 'center',
     gap: '10px',
     padding: '8px 10px',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: 'var(--hairline)',
     borderRadius: '8px',
     border: '1px solid var(--border-color)',
   },
@@ -569,7 +584,7 @@ const cardStyles = {
   },
   formExCard: {
     padding: '12px',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: 'var(--hairline)',
     border: '1px solid var(--border-color)',
     borderRadius: '10px',
   },
@@ -626,7 +641,7 @@ const cardStyles = {
   },
   pickerRow: {
     padding: '12px',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: 'var(--hairline)',
     border: '1px solid var(--border-color)',
     borderRadius: '10px',
     cursor: 'pointer',

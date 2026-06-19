@@ -1,18 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
+/* ===================== Theme tokens ===================== */
+/* Dark is the default theme. Light theme overrides the same variable names
+   below in [data-theme="light"], so component styles that reference these
+   variables adapt automatically with no per-component changes. */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+
   --bg-dark: #0a0a0c;
   --bg-card: rgba(22, 22, 26, 0.7);
   --bg-card-solid: #16161a;
   --bg-card-hover: rgba(30, 30, 36, 0.8);
   --bg-input: rgba(26, 26, 32, 0.9);
+  --bg-nav: rgba(10, 10, 12, 0.85);
+  --bg-elevated: rgba(16, 16, 20, 0.92);
   --border-color: rgba(255, 255, 255, 0.06);
   --border-focus: rgba(255, 255, 255, 0.12);
   --text-primary: #f4f4f5;
   --text-secondary: #a1a1aa;
   --text-muted: #52525b;
-  
-  /* Gradient accent system */
+  --hairline: rgba(255, 255, 255, 0.04);
+  --on-accent: #0a0a0c;
+  --overlay: rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  /* Accent system (kept identical across themes) */
   --accent: #5dcaa5;
   --accent-hover: #4ebd96;
   --accent-secondary: #4ab8e8;
@@ -21,18 +33,52 @@
   --accent-glow: rgba(93, 202, 165, 0.3);
   --accent-gradient: linear-gradient(135deg, #5dcaa5 0%, #4ab8e8 100%);
   --accent-gradient-subtle: linear-gradient(135deg, rgba(93, 202, 165, 0.15) 0%, rgba(74, 184, 232, 0.08) 100%);
-  
+
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.1);
   --danger-border: rgba(239, 68, 68, 0.2);
-  
+
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  
+
   /* Glass effect tokens */
   --glass-bg: rgba(22, 22, 26, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: 20px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-dark: #f4f5f7;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-card-solid: #ffffff;
+  --bg-card-hover: #ffffff;
+  --bg-input: #ffffff;
+  --bg-nav: rgba(255, 255, 255, 0.88);
+  --bg-elevated: rgba(255, 255, 255, 0.96);
+  --border-color: rgba(9, 9, 11, 0.10);
+  --border-focus: rgba(9, 9, 11, 0.22);
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #9ca3af;
+  --hairline: rgba(9, 9, 11, 0.06);
+  --on-accent: #06281f;
+  --overlay: rgba(24, 24, 27, 0.45);
+  --shadow-lg: 0 16px 48px rgba(24, 24, 27, 0.18);
+
+  /* Slightly deeper teal for legibility on light surfaces */
+  --accent: #0f9b74;
+  --accent-hover: #0c8a67;
+  --accent-secondary: #1f8fc7;
+  --accent-bg: rgba(15, 155, 116, 0.10);
+  --accent-border: rgba(15, 155, 116, 0.30);
+  --accent-glow: rgba(15, 155, 116, 0.22);
+  --accent-gradient: linear-gradient(135deg, #0f9b74 0%, #1f8fc7 100%);
+  --accent-gradient-subtle: linear-gradient(135deg, rgba(15, 155, 116, 0.16) 0%, rgba(31, 143, 199, 0.08) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(9, 9, 11, 0.08);
 }
 
 * {
@@ -59,6 +105,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Disable pull-to-refresh / rubber-band overscroll in the installed PWA */
   overscroll-behavior-y: none;
+  /* Smooth cross-fade when switching themes */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Prevent iOS auto-zoom on input focus (any input < 16px triggers zoom) */
@@ -75,11 +123,11 @@ input, textarea, select {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-focus);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--text-muted);
 }
 
 /* App container - Centered mobile-first layout */
@@ -103,9 +151,8 @@ input, textarea, select {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px 16px;
-  /* Clear the iOS status bar / notch when launched fullscreen */
-  padding-top: calc(20px + env(safe-area-inset-top));
+  padding: 18px 16px;
+  /* The sticky app bar already clears the iOS status bar / notch */
   animation: screenFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -273,7 +320,7 @@ input, textarea, select {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--overlay);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -356,7 +403,7 @@ input, textarea, select {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--hairline);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
@@ -460,7 +507,7 @@ input, textarea, select {
 .notes-textarea {
   width: 100%;
   min-height: 60px;
-  background: rgba(20, 20, 26, 0.6);
+  background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-primary);
@@ -488,7 +535,7 @@ input, textarea, select {
 .progress-bar-track {
   width: 100%;
   height: 3px;
-  background: rgba(255,255,255,0.06);
+  background: var(--border-color);
   border-radius: 2px;
   overflow: hidden;
   margin-top: 6px;
@@ -511,11 +558,224 @@ input, textarea, select {
   font-size: 11px;
   font-style: italic;
   color: var(--text-muted);
-  background: rgba(255,255,255,0.03);
+  background: var(--hairline);
   border: 1px solid var(--border-color);
   margin-top: 6px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ===================== App bar (top) ===================== */
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: calc(env(safe-area-inset-top)) 8px 0 8px;
+  padding-top: env(safe-area-inset-top);
+  background: var(--bg-nav);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.app-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+.icon-btn:active { background: var(--bg-card-hover); transform: scale(0.94); }
+
+/* ===================== Drawer (hamburger menu) ===================== */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 82%;
+  max-width: 320px;
+  z-index: 201;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 16px);
+  animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 14px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+.drawer-item:hover { background: var(--bg-card); }
+.drawer-item:active { transform: scale(0.98); }
+.drawer-item.active { background: var(--accent-bg); color: var(--accent); }
+.drawer-item .drawer-item-icon { color: var(--text-secondary); display: flex; }
+.drawer-item.active .drawer-item-icon { color: var(--accent); }
+
+.drawer-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 16px 14px 6px;
+}
+
+/* ===================== Segmented control ===================== */
+.segmented {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+.segmented button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.segmented button.active {
+  background: var(--bg-card-solid);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* ===================== Stopwatch ===================== */
+.sw-dial {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 8px auto 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sw-time {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.sw-ring-bg { stroke: var(--border-color); }
+.sw-ring-fg {
+  stroke: var(--accent);
+  transition: stroke-dashoffset 0.2s linear;
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+.sw-controls {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.sw-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.sw-fab:active { transform: scale(0.93); }
+.sw-fab-primary { background: var(--accent-gradient); color: var(--on-accent); box-shadow: 0 6px 24px var(--accent-glow); }
+.sw-fab-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
+.sw-fab-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+.sw-lap-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 14px;
+}
+.sw-lap-row:first-child { border-top: 1px solid var(--hairline); }
+.sw-lap-num { color: var(--text-secondary); font-weight: 500; }
+.sw-lap-time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Reduced-motion: respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -9,7 +9,13 @@
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>console.log\\(JSON.stringify\\(JSON.parse\\(d\\).icons,null,1\\)\\)\\)\")",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>console.log\\('scripts:',JSON.stringify\\(JSON.parse\\(d\\).scripts,null,1\\)\\)\\)\")",
       "Bash(pkill -f \"vite dev\")",
-      "Bash(pkill -f \"vite preview\")"
+      "Bash(pkill -f \"vite preview\")",
+      "Bash(sed -i \"s/borderColor: 'rgba\\(255,255,255,0.1\\)'/borderColor: 'var\\(--border-focus\\)'/g\" src/screens/TodayScreen.tsx)",
+      "Bash(sed -i \"s/backgroundColor: 'rgba\\(255,255,255,0.03\\)'/backgroundColor: 'var\\(--hairline\\)'/g; s/backgroundColor: 'rgba\\(255,255,255,0.04\\)'/backgroundColor: 'var\\(--hairline\\)'/g; s/borderBottom: '1px solid rgba\\(255,255,255,0.04\\)'/borderBottom: '1px solid var\\(--hairline\\)'/g\" src/screens/HistoryScreen.tsx)",
+      "Bash(sed -i \"s/backgroundColor: '#1a1a20'/backgroundColor: 'var\\(--bg-card\\)'/g\" src/screens/ProgressScreen.tsx)",
+      "Bash(sed -i \"s/backgroundColor: '#16161a'/backgroundColor: 'var\\(--bg-card-solid\\)'/g; s/background: 'rgba\\(255,255,255,0.03\\)'/background: 'var\\(--hairline\\)'/g; s/backgroundColor: 'rgba\\(255,255,255,0.02\\)'/backgroundColor: 'var\\(--hairline\\)'/g\" src/screens/SettingsScreen.tsx)",
+      "Bash(sed -i \"s/backgroundColor: 'rgba\\(255, 255, 255, 0.02\\)'/backgroundColor: 'var\\(--hairline\\)'/g\" src/screens/RoutinesScreen.tsx)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
