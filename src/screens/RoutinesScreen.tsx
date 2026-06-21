@@ -146,6 +146,23 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
     return matchesSearch && matchesMuscle && notAlreadyAdded;
   });
 
+  const pickerQuery = searchQuery.trim();
+  const pickerExactExists = exercises.some(ex => ex.name.toLowerCase() === pickerQuery.toLowerCase());
+
+  // Create a brand-new exercise from the picker and add it to the routine form.
+  const handleCreateExerciseForForm = async () => {
+    if (!pickerQuery) return;
+    const id = uuid();
+    await db.exercises.add({
+      id,
+      name: pickerQuery,
+      muscleGroup: muscleFilter !== 'All' ? muscleFilter : 'Other',
+      isCustom: true,
+      updatedAt: Date.now(),
+    });
+    addExerciseToForm(id);
+  };
+
   // ---------- Render ----------
 
   return (
@@ -528,21 +545,28 @@ export default function RoutinesScreen({ onManageExercises }: RoutinesScreenProp
 
               {/* Exercise list */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '350px', overflowY: 'auto' }}>
-                {filteredExercises.length === 0 ? (
+                {filteredExercises.map(ex => (
+                  <div
+                    key={ex.id}
+                    onClick={() => addExerciseToForm(ex.id)}
+                    style={cardStyles.pickerRow}
+                  >
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>{ex.name}</span>
+                    <span className="chip" style={{ fontSize: '10px', padding: '2px 8px' }}>{ex.muscleGroup}</span>
+                  </div>
+                ))}
+
+                {pickerQuery && !pickerExactExists && (
+                  <button onClick={handleCreateExerciseForForm} style={cardStyles.createRow}>
+                    <Plus size={16} />
+                    <span>Create "<strong>{pickerQuery}</strong>"</span>
+                  </button>
+                )}
+
+                {filteredExercises.length === 0 && !pickerQuery && (
                   <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '13px' }}>
-                    No matching exercises
+                    Search to find or create an exercise.
                   </p>
-                ) : (
-                  filteredExercises.map(ex => (
-                    <div
-                      key={ex.id}
-                      onClick={() => addExerciseToForm(ex.id)}
-                      style={cardStyles.pickerRow}
-                    >
-                      <span style={{ fontWeight: '500', fontSize: '14px' }}>{ex.name}</span>
-                      <span className="chip" style={{ fontSize: '10px', padding: '2px 8px' }}>{ex.muscleGroup}</span>
-                    </div>
-                  ))
                 )}
               </div>
             </div>
@@ -677,5 +701,21 @@ const cardStyles = {
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     transition: 'border-color 0.2s ease, background-color 0.2s ease',
+  },
+  createRow: {
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    gap: '8px',
+    padding: '12px',
+    width: '100%',
+    backgroundColor: 'var(--accent-bg)',
+    border: '1px dashed var(--accent-border)',
+    borderRadius: '10px',
+    color: 'var(--accent)',
+    fontSize: '14px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-sans)',
+    cursor: 'pointer',
+    textAlign: 'left' as const,
   },
 };

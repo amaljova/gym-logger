@@ -393,7 +393,7 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
     const newEx: Exercise = {
       id: newExId,
       name: searchQuery.trim(),
-      muscleGroup: selectedMuscleFilter === 'All' ? 'Custom' : selectedMuscleFilter,
+      muscleGroup: selectedMuscleFilter === 'All' ? 'Other' : selectedMuscleFilter,
       isCustom: true,
       updatedAt: now,
     };
@@ -407,6 +407,8 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
     const matchesMuscle = selectedMuscleFilter === 'All' || ex.muscleGroup === selectedMuscleFilter;
     return matchesSearch && matchesMuscle;
   });
+  const trimmedQuery = searchQuery.trim();
+  const exactExists = exercises.some(ex => ex.name.toLowerCase() === trimmedQuery.toLowerCase());
 
   const muscleGroups = ['All', ...getMuscleGroups(exercises)];
 
@@ -774,26 +776,28 @@ export default function TodayScreen({ onNavigateToRoutines }: TodayScreenProps) 
               </div>
 
               <div style={styles.modalExList}>
-                {filteredExercises.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                    <p className="text-secondary" style={{ marginBottom: '16px', fontSize: '14px' }}>No match found.</p>
-                    {searchQuery.trim() && (
-                      <button className="btn btn-primary" onClick={handleCreateCustomExercise} style={{ margin: '0 auto' }}>
-                        Create "{searchQuery.trim()}"
-                      </button>
-                    )}
+                {filteredExercises.map(ex => (
+                  <div
+                    key={ex.id}
+                    onClick={() => handleAddExerciseToWorkout(ex.id)}
+                    style={styles.modalExRow}
+                  >
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>{ex.name}</span>
+                    <span className="chip" style={{ fontSize: '10px' }}>{ex.muscleGroup}</span>
                   </div>
-                ) : (
-                  filteredExercises.map(ex => (
-                    <div
-                      key={ex.id}
-                      onClick={() => handleAddExerciseToWorkout(ex.id)}
-                      style={styles.modalExRow}
-                    >
-                      <span style={{ fontWeight: '500', fontSize: '14px' }}>{ex.name}</span>
-                      <span className="chip" style={{ fontSize: '10px' }}>{ex.muscleGroup}</span>
-                    </div>
-                  ))
+                ))}
+
+                {trimmedQuery && !exactExists && (
+                  <button onClick={handleCreateCustomExercise} style={styles.createExRow}>
+                    <Plus size={16} />
+                    <span>Create "<strong>{trimmedQuery}</strong>"</span>
+                  </button>
+                )}
+
+                {filteredExercises.length === 0 && !trimmedQuery && (
+                  <p className="text-secondary" style={{ textAlign: 'center', padding: '24px 0', fontSize: '14px' }}>
+                    Search to find or create an exercise.
+                  </p>
                 )}
               </div>
             </div>
@@ -1079,5 +1083,22 @@ const styles = {
     alignItems: 'center',
     transition: 'border-color 0.2s ease, background-color 0.2s ease',
     minHeight: '48px',
+  },
+  createExRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '13px 14px',
+    minHeight: '48px',
+    width: '100%',
+    backgroundColor: 'var(--accent-bg)',
+    border: '1px dashed var(--accent-border)',
+    borderRadius: '10px',
+    color: 'var(--accent)',
+    fontSize: '14px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-sans)',
+    cursor: 'pointer',
+    textAlign: 'left' as const,
   },
 };

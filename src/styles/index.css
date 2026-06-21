@@ -773,6 +773,7 @@ input, textarea, select {
   padding: calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 16px);
   animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @keyframes drawerSlideIn {

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ClipboardList, Dumbbell, Settings, X, Sun, Moon, Monitor, History, TrendingUp, Timer } from 'lucide-react';
 import type { Tab } from '../App';
 import type { ThemePref } from '../hooks/useTheme';
@@ -31,6 +32,14 @@ const THEME_OPTIONS: { id: ThemePref; label: string; icon: typeof Sun }[] = [
 ];
 
 export default function Drawer({ currentTab, go, onClose, pref, setTheme }: DrawerProps) {
+  // Lock background scroll while the drawer is open so the page behind it
+  // doesn't move when scrolling/swiping inside the menu.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   return (
     <>
       <div className="drawer-overlay" onClick={onClose} />
